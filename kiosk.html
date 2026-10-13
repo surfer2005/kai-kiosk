@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KAI-Kiosk — Einstellungen</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231F6E5C'/%3E%3Cg transform='translate(112,112) scale(12)' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 18c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0M5 18l1.2-8.4a1 1 0 0 1 1-.86H12V4l6 4-6 3.2'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+ :root{--bg:#F3F1EA;--panel:#FBFAF5;--panel2:#F1EDE3;--line:#E2DDD0;--ink:#121A17;--muted:#5C6B64;--faint:#8A978F;
+   --teal:#1F6E5C;--teal2:#185849;--amber:#B16A12;--red:#C4442E;--green:#2E8B57;
+   --mono:ui-monospace,'SFMono-Regular','Menlo','Consolas',monospace}
+ @media(prefers-color-scheme:dark){:root{--bg:#081518;--panel:#0E2529;--panel2:#0B1E22;--line:#1C3B40;--ink:#EAF4F1;--muted:#8FB3AC;--faint:#5E8882;--teal:#54BC9F;--teal2:#3FA98B;--amber:#F0A93C;--red:#E8614E;--green:#3FC28C}}
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:var(--bg);color:var(--ink);font-family:system-ui,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+ .wrap{max-width:720px;margin:0 auto;padding:22px 16px 60px;display:flex;flex-direction:column;gap:18px}
+ header{display:flex;align-items:center;gap:13px}
+ .brand{width:42px;height:42px;border-radius:11px;background:var(--teal);display:grid;place-items:center;flex:none}
+ .brand svg{width:27px;height:27px;display:block}
+ h1{font-size:1.35rem;font-weight:800;line-height:1.1}
+ header .sub{color:var(--muted);font-size:.85rem;font-weight:600}
+ .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+ .card h2{font-size:.76rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+ .field{margin-bottom:14px}
+ .field:last-child{margin-bottom:0}
+ label{display:block;font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:5px}
+ .hint{font-size:.78rem;color:var(--faint);margin-top:5px}
+ .hint code{font-family:var(--mono);font-size:.92em;color:var(--muted)}
+ input[type=text],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:.95rem;color:var(--ink)}
+ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+ .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+ @media(max-width:520px){.row{grid-template-columns:1fr}}
+ .btn{background:var(--teal);color:#fff;border:none;border-radius:9px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer}
+ .btn:hover{background:var(--teal2)}
+ .btn.ghost{background:transparent;color:var(--teal);border:1px solid var(--line)}
+ .btn.ghost:hover{border-color:var(--teal)}
+ .btn.warn{background:transparent;color:var(--red);border:1px solid var(--line)}
+ .btn[disabled]{opacity:.5;cursor:default}
+ .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+ .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+ .seg button{background:var(--panel2);border:none;padding:9px 16px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer}
+ .seg button.on{background:var(--teal);color:#fff}
+ .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:800}
+ .badge.ok{background:rgba(46,139,87,.14);color:var(--green)}
+ .badge.new{background:rgba(177,106,18,.16);color:var(--amber)}
+ .ver{font-family:var(--mono);font-weight:700}
+ .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+ .toast.show{opacity:1}
+ .toast.err{background:var(--red);color:#fff}
+ /* Anmeldemaske */
+ .login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+ .login.show{display:flex}
+ .login .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;max-width:360px;width:100%;display:flex;flex-direction:column;gap:14px}
+ .login h2{margin:0;font-size:1.05rem}
+ #netstatic{display:none}
+ #netstatic.show{display:block}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0M5 18l1.2-8.4a1 1 0 0 1 1-.86H12V4l6 4-6 3.2"/></svg></div>
+    <div><h1>KAI-Kiosk</h1><div class="sub">Terminal-Einstellungen</div></div>
+    <button class="btn ghost" style="margin-left:auto" id="logoutbtn" onclick="logout()">Abmelden</button>
+  </header>
+
+  <section class="card">
+    <h2>KAI-Adresse</h2>
+    <div class="field">
+      <label>Adresse, die das Terminal im Vollbild öffnet</label>
+      <input type="text" id="kai_url" placeholder="https://kai.beispiel.de">
+      <div class="hint">Hier die KAI-Adresse eintragen (Muster: <code>https://kai.beispiel.de</code>). Nach dem Ändern Gerät neu starten, damit die neue Adresse greift.</div>
+    </div>
+    <div class="actions"><button class="btn ghost" onclick="testUrl()">Adresse öffnen &amp; testen</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Netzwerk</h2>
+    <div class="field">
+      <label>IP-Bezug</label>
+      <div class="seg" id="netmode">
+        <button type="button" data-m="dhcp" onclick="setMode('dhcp')">Automatisch (DHCP)</button>
+        <button type="button" data-m="static" onclick="setMode('static')">Feste IP</button>
+      </div>
+    </div>
+    <div id="netstatic">
+      <div class="row">
+        <div class="field"><label>Schnittstelle</label><input type="text" id="net_if" placeholder="eth0"></div>
+        <div class="field"><label>Adresse (CIDR)</label><input type="text" id="net_addr" placeholder="192.168.1.50/24"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Gateway</label><input type="text" id="net_gw" placeholder="192.168.1.1"></div>
+        <div class="field"><label>DNS (Komma-getrennt)</label><input type="text" id="net_dns" placeholder="192.168.1.1, 1.1.1.1"></div>
+      </div>
+    </div>
+    <div class="actions"><button class="btn" onclick="saveNet()">Netzwerk speichern</button><span class="hint">Wirkt nach Geräte-Neustart.</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Zugang</h2>
+    <div class="row">
+      <div class="field">
+        <label>VNC-Passwort (Fernzugriff)</label>
+        <input type="password" id="vnc_password" placeholder="leer = unverändert">
+        <div class="hint">Für die Bildschirm-Fernwartung. Greift nach Geräte-Neustart.</div>
+      </div>
+      <div class="field">
+        <label>Geräte-Token</label>
+        <input type="text" id="device_token" placeholder="leer = keiner">
+        <div class="hint">Markiert dieses Terminal bei KAI als vertrauenswürdig (für späteren Login ohne 2FA).</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Passwort der Konfig-Seite</label>
+      <input type="password" id="ui_password" placeholder="leer = offen im LAN">
+      <div class="hint">Schützt diese Seite. Leer = im lokalen Netz ohne Passwort erreichbar.</div>
+    </div>
+    <div class="actions"><button class="btn" onclick="saveCfg()">Einstellungen speichern</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Software <span id="verbadge"></span></h2>
+    <div class="field">
+      <div>Laufende Version: <span class="ver" id="curver">—</span><span id="latestline"></span></div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" onclick="checkUpdate()">Nach Update suchen</button>
+      <button class="btn" id="updbtn" onclick="doUpdate()">Jetzt aktualisieren &amp; neu starten</button>
+    </div>
+    <div class="hint" style="margin-top:8px">Holt die neueste Version aus GitHub und startet den Dienst neu — wie beim Bordwächter-Gerät.</div>
+  </section>
+
+  <section class="card">
+    <h2>Gerät</h2>
+    <div class="actions">
+      <button class="btn ghost" onclick="restartSvc()">Konfig-Dienst neu starten</button>
+      <button class="btn warn" onclick="reboot()">Gerät neu starten</button>
+    </div>
+    <div class="hint" style="margin-top:8px">Nach dem Ändern von Adresse oder fester IP das Gerät neu starten.</div>
+  </section>
+</div>
+
+<div class="login" id="login">
+  <div class="box">
+    <h2>KAI-Kiosk — Anmelden</h2>
+    <input type="password" id="loginpw" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()">Anmelden</button>
+    <div class="hint" id="loginerr" style="color:var(--red);display:none">Passwort falsch</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id)
+function toast(msg,err){const t=$('toast');t.textContent=msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.className='toast',2600)}
+async function jget(u){const r=await fetch(u,{headers:{'Cache-Control':'no-store'}});return r.json()}
+async function jpost(u,body){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):'{}'});return r}
+
+function setMode(m){document.querySelectorAll('#netmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('netstatic').classList.toggle('show',m==='static')}
+
+async function boot(){
+  // Anmeldung nötig?
+  try{const n=await jget('/api/needs-login');if(n.needsLogin&&!n.authed){$('login').classList.add('show');return}}catch(e){}
+  show()
+}
+function show(){$('login').classList.remove('show');$('app').style.display='flex';load();checkUpdate()}
+async function doLogin(){
+  const r=await jpost('/api/login',{username:'admin',password:$('loginpw').value})
+  const j=await r.json()
+  if(j.ok){$('loginerr').style.display='none';show()}else{$('loginerr').style.display='block'}
+}
+async function logout(){await jpost('/api/logout');location.reload()}
+
+async function load(){
+  try{
+    const c=await jget('/api/config')
+    $('kai_url').value=c.kai_url||''
+    $('vnc_password').value='' // nie zurückspielen
+    $('device_token').value=c.device_token||''
+    $('ui_password').value=''
+    const nm=(c.network&&c.network.mode)||'dhcp';setMode(nm)
+    $('net_if').value=(c.network&&c.network.interface)||'eth0'
+    $('net_addr').value=(c.network&&c.network.address)||''
+    $('net_gw').value=(c.network&&c.network.gateway)||''
+    $('net_dns').value=(c.network&&c.network.dns)||''
+    window.__cfg=c
+  }catch(e){toast('Konnte Einstellungen nicht laden',1)}
+}
+
+function curCfg(){
+  const c=Object.assign({},window.__cfg||{})
+  c.kai_url=$('kai_url').value.trim()
+  c.device_token=$('device_token').value.trim()
+  if($('ui_password').value!=='')c.ui_password=$('ui_password').value
+  if($('vnc_password').value!=='')c.vnc_password=$('vnc_password').value
+  c.network=c.network||{}
+  c.network.mode=document.querySelector('#netmode button.on')?document.querySelector('#netmode button.on').dataset.m:'dhcp'
+  c.network.interface=$('net_if').value.trim()
+  c.network.address=$('net_addr').value.trim()
+  c.network.gateway=$('net_gw').value.trim()
+  c.network.dns=$('net_dns').value.trim()
+  return c
+}
+async function saveCfg(){
+  const r=await jpost('/api/config',curCfg());const j=await r.json().catch(()=>({}))
+  if(r.ok&&j.ok){toast('Gespeichert');load()}else{toast('Fehler: '+((j&&j.error)||r.status),1)}
+}
+async function saveNet(){
+  const c=curCfg().network
+  const r=await jpost('/api/network',c);const j=await r.json().catch(()=>({}))
+  if(r.ok&&j.ok){toast('Netzwerk gespeichert — Neustart nötig')}else{toast('Fehler: '+((j&&j.error)||r.status),1)}
+}
+function testUrl(){const u=$('kai_url').value.trim();if(u)window.open(u,'_blank')}
+
+async function checkUpdate(){
+  try{
+    const j=await jget('/api/update-check')
+    $('curver').textContent=j.current||'—'
+    if(j.updateAvailable){
+      $('verbadge').innerHTML='<span class="badge new">● Neue Version verfügbar</span>'
+      $('latestline').innerHTML=' · neu: <span class="ver">'+(j.latest||'')+'</span>'
+      $('updbtn').style.display=''
+    }else{
+      $('verbadge').innerHTML='<span class="badge ok">● Aktuell</span>'
+      $('latestline').textContent=''
+      $('updbtn').style.display='none'
+    }
+  }catch(e){$('curver').textContent='—'}
+}
+async function doUpdate(){
+  if(!confirm('Neueste Version aus GitHub holen und Dienst neu starten?'))return
+  $('updbtn').disabled=true;toast('Aktualisiere …')
+  try{const r=await jpost('/api/update');const j=await r.json().catch(()=>({}))
+    if(j.ok){toast('Aktualisiert — Neustart läuft');setTimeout(()=>location.reload(),4000)}
+    else{toast('Update fehlgeschlagen: '+((j&&j.error)||''),1);$('updbtn').disabled=false}
+  }catch(e){toast('Neustart läuft …');setTimeout(()=>location.reload(),5000)}
+}
+async function restartSvc(){if(!confirm('Konfig-Dienst neu starten?'))return;try{await jpost('/api/restart')}catch(e){};toast('Neustart läuft …');setTimeout(()=>location.reload(),3500)}
+async function reboot(){if(!confirm('Gerät jetzt neu starten?'))return;try{await jpost('/api/reboot')}catch(e){};toast('Gerät startet neu …')}
+
+boot()
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=KAI-Kiosk
+Comment=Startet Chromium im Vollbild auf die KAI-Adresse
+Exec=/usr/local/bin/kiosk-browser.sh
+X-GNOME-Autostart-enabled=true

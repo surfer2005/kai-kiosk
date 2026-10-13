@@ -1,0 +1,5 @@
+/kai-kiosk
+/dist/
+*.img
+*.img.xz
+config.json

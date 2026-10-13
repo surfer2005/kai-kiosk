@@ -1,0 +1,122 @@
+name: image
+
+# Baut ein fertiges KAI-Kiosk-Raspberry-Image, OHNE pi-gen/apt/chroot: nimmt das OFFIZIELLE
+# Raspberry-Pi-OS-Desktop-Image (Chromium + VNC vorhanden), hängt es per Loop-Mount ein und legt
+# unseren Konfig-Dienst + Browser-Starter + Autostart + ein Erst-Start-Skript hinein
+# (SSH/VNC an, Desktop-Autologin, Hostname, Zeitzone). Kein apt-Lauf im Build.
+#
+# Ergebnis: Pro Terminal nur eine Datei `kai-kiosk.json` auf die Boot-Partition legen (URL/IP/Token)
+# — oder einmal in der Konfig-Oberfläche eintragen. Image flashen, Pi starten, fertig.
+#
+# Auslösen: manuell (Actions → image → Run) oder per Tag `img-*` (dann Release mit `.img.xz`).
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["img-*"]
+
+permissions:
+  contents: write
+
+env:
+  RPIOS_URL: https://downloads.raspberrypi.com/raspios_arm64_latest
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: KAI-Kiosk-Binary (arm64) bauen
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o kai-kiosk .
+
+      - name: Platz auf dem Runner schaffen
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Offizielles Raspberry Pi OS laden + entpacken
+        run: |
+          curl -fL --retry 3 -o raspios.img.xz "$RPIOS_URL"
+          xz -dT0 raspios.img.xz
+          ls -lh raspios.img
+
+      - name: Dienst + Erst-Start ins Image legen
+        run: |
+          set -euxo pipefail
+          LOOP=$(sudo losetup -Pf --show raspios.img)
+          sudo mkdir -p /mnt/kk-boot /mnt/kk-root
+          sudo mount "${LOOP}p1" /mnt/kk-boot
+          sudo mount "${LOOP}p2" /mnt/kk-root
+
+          # --- root-Partition: Binary, Browser-Starter, systemd-Unit, Autostart, Config ---
+          sudo install -Dm755 kai-kiosk /mnt/kk-root/usr/local/bin/kai-kiosk
+          sudo install -Dm755 kiosk-browser.sh /mnt/kk-root/usr/local/bin/kiosk-browser.sh
+          sudo install -Dm644 systemd/kai-kiosk.service /mnt/kk-root/etc/systemd/system/kai-kiosk.service
+          sudo install -Dm644 autostart/kai-kiosk.desktop /mnt/kk-root/etc/xdg/autostart/kai-kiosk.desktop
+          sudo mkdir -p /mnt/kk-root/etc/kai-kiosk
+          sudo cp config.example.json /mnt/kk-root/etc/kai-kiosk/config.json
+
+          # --- boot-Partition (zur Laufzeit /boot/firmware): SSH, Nutzer, Erst-Start ---
+          sudo touch /mnt/kk-boot/ssh
+          HASH=$(echo 'kai-kiosk' | openssl passwd -6 -stdin)
+          echo "pi:${HASH}" | sudo tee /mnt/kk-boot/userconf.txt >/dev/null
+
+          # Erst-Start-Skript: Hostname, SSH+VNC an, Desktop-Autologin, Zeitzone, Dienst aktivieren,
+          # dann sich selbst aus cmdline.txt entfernen.
+          sudo tee /mnt/kk-boot/firstrun.sh >/dev/null <<'FR'
+          #!/bin/bash
+          set +e
+          CUR=$(tr -d " \t\n\r" < /etc/hostname)
+          echo kai-kiosk >/etc/hostname
+          sed -i "s/127.0.1.1.*$CUR/127.0.1.1\tkai-kiosk/g" /etc/hosts
+          rm -f /etc/localtime; ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+          echo "Europe/Berlin" >/etc/timezone
+          systemctl enable ssh
+          raspi-config nonint do_vnc 0 || true
+          # Direkt in den Desktop einloggen (nötig, damit der Kiosk-Browser per Autostart startet).
+          raspi-config nonint do_boot_behaviour B4 || true
+          # Pro Terminal vorab abgelegte Konfiguration übernehmen (URL/IP/Token), falls vorhanden.
+          if [ -f /boot/firmware/kai-kiosk.json ]; then
+            install -Dm600 /boot/firmware/kai-kiosk.json /etc/kai-kiosk/config.json
+          fi
+          systemctl enable kai-kiosk.service
+          sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g; s| systemd.unit=[^ ]*||g' /boot/firmware/cmdline.txt
+          exit 0
+          FR
+          sudo chmod +x /mnt/kk-boot/firstrun.sh
+
+          sudo sed -i '1 s|$| systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=reboot systemd.unit=kernel-command-line.target|' /mnt/kk-boot/cmdline.txt
+          cat /mnt/kk-boot/cmdline.txt
+
+          sudo sync
+          sudo umount /mnt/kk-boot /mnt/kk-root
+          sudo losetup -d "$LOOP"
+
+      - name: Image umbenennen + packen
+        id: pack
+        run: |
+          OUT="kai-kiosk-$(date +%Y-%m-%d).img"
+          mv raspios.img "$OUT"
+          xz -T0 -6 "$OUT"
+          echo "path=${OUT}.xz" >> "$GITHUB_OUTPUT"
+          ls -lh "${OUT}.xz"
+
+      - name: Image als Artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: kai-kiosk-image
+          path: ${{ steps.pack.outputs.path }}
+          if-no-files-found: error
+
+      - name: Release (bei Tag img-*)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.pack.outputs.path }}

@@ -1,0 +1,14 @@
+{
+  "kai_url": "",
+  "listen": ":8091",
+  "ui_password": "",
+  "vnc_password": "",
+  "device_token": "",
+  "network": {
+    "mode": "dhcp",
+    "interface": "eth0",
+    "address": "",
+    "gateway": "",
+    "dns": ""
+  }
+}
