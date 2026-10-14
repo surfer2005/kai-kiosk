@@ -7,11 +7,10 @@ set -u
 
 CFG=/etc/kai-kiosk/config.json
 URL=""
-if [ -r "$CFG" ]; then
-  URL=$(python3 -c "import json,sys;print(json.load(open('$CFG')).get('kai_url',''))" 2>/dev/null)
-fi
-# Hinweis: ist keine Adresse gesetzt, wird weiter unten (nach dem Warten auf den lokalen Dienst)
-# die Konfig-Seite geöffnet, damit man die Adresse eintragen kann.
+# Die KAI-Adresse wird WEITER UNTEN über den lokalen Dienst (/api/target) geholt — NICHT direkt aus
+# config.json. Grund: die config.json gehört root (0600), der als "kiosk" laufende Browser-Starter darf
+# sie nicht lesen (→ Adresse leer → fälschlich Konfig-Seite). Der als root laufende Dienst liefert die
+# (unkritische) Adresse offen. Datei-Lesen bleibt nur als Rückfall, falls der Dienst sie mal nicht hat.
 
 # Chromium heißt je nach OS-Fassung "chromium-browser" oder "chromium".
 BIN=chromium-browser
@@ -49,6 +48,13 @@ if command -v curl >/dev/null 2>&1; then
     curl -fsS --max-time 2 -o /dev/null "http://127.0.0.1:8091/api/needs-login" 2>/dev/null && break
     sleep 1
   done
+  # KAI-Adresse vom (root-)Dienst holen — umgeht das Dateirecht-Problem der config.json.
+  URL=$(curl -fsS --max-time 3 "http://127.0.0.1:8091/api/target" 2>/dev/null \
+        | sed -n 's/.*"kai_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+fi
+# Rückfall: falls der Dienst die Adresse (noch) nicht liefert, direkt aus der Datei versuchen.
+if [ -z "$URL" ] && [ -r "$CFG" ]; then
+  URL=$(python3 -c "import json,sys;print(json.load(open('$CFG')).get('kai_url',''))" 2>/dev/null)
 fi
 
 # 2) Keine KAI-Adresse hinterlegt → Konfig-Seite (dort Adresse eintragen). Sonst KAI DIREKT öffnen

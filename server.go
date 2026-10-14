@@ -363,6 +363,13 @@ func (a *App) routes() *http.ServeMux {
 		writeJSON(w, map[string]any{"ips": localIPv4s(), "hostname": host})
 	})
 
+	// Ziel-Adresse (kai_url) für das Startskript — OFFEN (nicht sensibel). So muss kiosk-browser.sh
+	// die geschützte config.json (root, 0600) nicht selbst lesen; der als root laufende Dienst liefert
+	// nur diese eine, unkritische Angabe. Behebt den Fall "Benutzer kiosk darf config.json nicht lesen".
+	mux.HandleFunc("/api/target", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]any{"kai_url": a.getCfg().KaiURL})
+	})
+
 	return mux
 }
 
