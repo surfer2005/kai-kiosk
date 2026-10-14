@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -352,7 +354,16 @@ func (a *App) routes() *http.ServeMux {
 		go func() {
 			time.Sleep(500 * time.Millisecond)
 			syscall.Sync()
-			_ = syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART)
+			// Sauberer Weg zuerst (systemd), dann Fallbacks — und Fehler LOGGEN (vorher still verschluckt).
+			if err := exec.Command("systemctl", "reboot").Run(); err != nil {
+				log.Printf("reboot: 'systemctl reboot' fehlgeschlagen: %v — versuche 'reboot'", err)
+				if err2 := exec.Command("reboot").Run(); err2 != nil {
+					log.Printf("reboot: 'reboot' fehlgeschlagen: %v — versuche syscall", err2)
+					if err3 := syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART); err3 != nil {
+						log.Printf("reboot: syscall.Reboot fehlgeschlagen: %v", err3)
+					}
+				}
+			}
 		}()
 	}))
 

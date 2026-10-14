@@ -1,5 +1,6 @@
 # KAI-Kiosk Boot-Splash: KAI-Logo mittig auf hellem KAI-Papier-Hintergrund + drehender Teal-Ring.
-# Reines Script-Thema (keine externen Frames) — der Ring entsteht durch Drehen EINES Bildes.
+# Der Ring läuft über vorgerenderte Frames (spinner-0..11.png) — KEIN Laufzeit-Rotate (das greift
+# nicht auf jeder Plymouth-Version; dann erschien der Spinner nicht).
 
 # Hintergrund: KAI-Papier hell (#F3F1EA) — passt nahtlos zur hellen KAI-Anmeldemaske danach.
 Window.SetBackgroundTopColor(0.953, 0.945, 0.918);
@@ -11,23 +12,35 @@ logo.sprite.SetX(Window.GetWidth()  / 2 - logo.image.GetWidth()  / 2);
 logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 50);
 logo.sprite.SetZ(1);
 
-spinner.image = Image("spinner.png");
-spinner.sprite = Sprite();
-spinner.sprite.SetZ(2);
+spinner.count = 12;
+i = 0;
+while (i < spinner.count) {
+    spinner.frame[i] = Image("spinner-" + i + ".png");
+    i++;
+}
+spinner.sprite = Sprite(spinner.frame[0]);
+spinner.w  = spinner.frame[0].GetWidth();
+spinner.h  = spinner.frame[0].GetHeight();
 spinner.cx = Window.GetWidth()  / 2;
-spinner.cy = Window.GetHeight() / 2 + logo.image.GetHeight() / 2 + 20;
-spinner.angle = 0;
+spinner.cy = Window.GetHeight() / 2 + logo.image.GetHeight() / 2 + 10;
+spinner.sprite.SetX(spinner.cx - spinner.w / 2);
+spinner.sprite.SetY(spinner.cy - spinner.h / 2);
+spinner.sprite.SetZ(2);
 
+spinner.i = 0;
+spinner.tick = 0;
 fun refresh() {
-    spinner.angle += 0.12;
-    if (spinner.angle > 6.2832) spinner.angle -= 6.2832;
-    rotated = spinner.image.Rotate(spinner.angle);
-    spinner.sprite.SetImage(rotated);
-    spinner.sprite.SetX(spinner.cx - rotated.GetWidth()  / 2);
-    spinner.sprite.SetY(spinner.cy - rotated.GetHeight() / 2);
+    spinner.tick++;
+    # Plymouth refresht ~50/s → jeder 4. Tick = ~12 fps, eine Umdrehung ~1 s.
+    if (spinner.tick >= 4) {
+        spinner.tick = 0;
+        spinner.i++;
+        if (spinner.i >= spinner.count) spinner.i = 0;
+        spinner.sprite.SetImage(spinner.frame[spinner.i]);
+    }
 }
 Plymouth.SetRefreshFunction(refresh);
 
-# Passworteingabe (falls je nötig) schlicht halten — Kiosk hat i. d. R. keine.
+# Passworteingabe (Kiosk hat i. d. R. keine) schlicht/leer halten.
 fun display_password_callback(prompt, bullets) { }
 Plymouth.SetDisplayPasswordFunction(display_password_callback);

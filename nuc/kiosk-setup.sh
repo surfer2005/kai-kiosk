@@ -61,8 +61,7 @@ systemctl set-default graphical.target 2>/dev/null
 command -v plymouth-set-default-theme >/dev/null 2>&1 || apt-get -y install plymouth plymouth-themes 2>/dev/null
 if [ -d "$SRC/plymouth" ]; then
   install -d /usr/share/plymouth/themes/kai
-  install -m0644 "$SRC"/plymouth/kai.plymouth "$SRC"/plymouth/kai.script \
-                 "$SRC"/plymouth/logo.png "$SRC"/plymouth/spinner.png /usr/share/plymouth/themes/kai/
+  install -m0644 "$SRC"/plymouth/* /usr/share/plymouth/themes/kai/
   plymouth-set-default-theme kai 2>/dev/null || true
 else
   plymouth-set-default-theme spinner 2>/dev/null || true
