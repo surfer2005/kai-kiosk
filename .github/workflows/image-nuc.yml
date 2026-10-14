@@ -59,6 +59,7 @@ jobs:
           cp systemd/kai-kiosk.service       isoroot/kai-kiosk/kai-kiosk.service
           cp config.example.json            isoroot/kai-kiosk/config.json
           cp nuc/kiosk-setup.sh              isoroot/kai-kiosk/kiosk-setup.sh
+          cp -r plymouth                     isoroot/kai-kiosk/plymouth
           cp nuc/preseed.cfg                 isoroot/preseed.cfg
 
           # BIOS-Boot-Menü (isolinux): vollautomatisch starten.

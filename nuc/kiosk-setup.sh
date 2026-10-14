@@ -57,9 +57,16 @@ systemctl enable x11vnc.service 2>/dev/null
 systemctl enable kai-kiosk.service 2>/dev/null
 systemctl set-default graphical.target 2>/dev/null
 
-# Sauberer Boot: grafischer Splash mit Spinner („Kringel") statt Textausgabe + GRUB-Menü (Nutzerwunsch).
+# Sauberer Boot: grafischer Splash mit KAI-Logo + drehendem Ring statt Textausgabe + GRUB-Menü.
 command -v plymouth-set-default-theme >/dev/null 2>&1 || apt-get -y install plymouth plymouth-themes 2>/dev/null
-plymouth-set-default-theme spinner 2>/dev/null || true
+if [ -d "$SRC/plymouth" ]; then
+  install -d /usr/share/plymouth/themes/kai
+  install -m0644 "$SRC"/plymouth/kai.plymouth "$SRC"/plymouth/kai.script \
+                 "$SRC"/plymouth/logo.png "$SRC"/plymouth/spinner.png /usr/share/plymouth/themes/kai/
+  plymouth-set-default-theme kai 2>/dev/null || true
+else
+  plymouth-set-default-theme spinner 2>/dev/null || true
+fi
 if [ -f /etc/default/grub ]; then
   sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub || true
   if grep -q '^GRUB_TIMEOUT_STYLE=' /etc/default/grub; then

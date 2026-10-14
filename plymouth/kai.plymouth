@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=KAI
+Description=KAI-Kiosk Boot-Splash (Logo + Spinner)
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/kai
+ScriptFile=/usr/share/plymouth/themes/kai/kai.script
