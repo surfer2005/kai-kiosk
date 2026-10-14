@@ -163,6 +163,13 @@
   </div>
 </div>
 
+<div class="login" id="rebootov">
+  <div class="box" style="text-align:center">
+    <h2>Gerät startet neu …</h2>
+    <div class="hint" id="rebootmsg" style="margin-top:6px">Bitte warten — die Seite verbindet sich automatisch wieder.</div>
+  </div>
+</div>
+
 <div id="ask"><div class="box"><div class="msg" id="askmsg"></div><div class="btns"><button class="btn ghost" id="askno">Abbrechen</button><button class="btn" id="askyes">OK</button></div></div></div>
 
 <div class="toast" id="toast"></div>
@@ -243,6 +250,7 @@ async function saveUrlReboot(){
   if(!(r.ok&&j.ok)){toast('Speichern fehlgeschlagen: '+((j&&j.error)||r.status),1);return}
   toast('Gespeichert — Gerät startet neu …')
   try{await jpost('/api/reboot')}catch(e){}
+  rebootOverlay()
 }
 async function saveNet(){
   const c=curCfg().network
@@ -274,8 +282,19 @@ async function doUpdate(){
     else{toast('Update fehlgeschlagen: '+((j&&j.error)||''),1);$('updbtn').disabled=false}
   }catch(e){toast('Neustart läuft …');setTimeout(()=>location.reload(),5000)}
 }
-async function restartSvc(){if(!(await ask('Konfig-Dienst neu starten?')))return;try{await jpost('/api/restart')}catch(e){};toast('Neustart läuft …');setTimeout(()=>location.reload(),3500)}
-async function reboot(){if(!(await ask('Gerät jetzt neu starten?')))return;try{await jpost('/api/reboot')}catch(e){};toast('Gerät startet neu …')}
+// Overlay „Gerät startet neu … verbinde erneut": wartet, bis das Gerät weg war UND wieder antwortet,
+// dann lädt die Seite automatisch neu. Funktioniert auch von einem anderen Rechner aus.
+function rebootOverlay(){
+  $('rebootov').classList.add('show')
+  var wentDown=false
+  var t=setInterval(function(){
+    fetch('/api/needs-login',{cache:'no-store'})
+      .then(function(){ if(wentDown){ clearInterval(t); location.reload() } })
+      .catch(function(){ wentDown=true; try{$('rebootmsg').textContent='Gerät fährt hoch … verbinde erneut …'}catch(e){} })
+  },2000)
+}
+async function restartSvc(){if(!(await ask('Konfig-Dienst neu starten?')))return;try{await jpost('/api/restart')}catch(e){};rebootOverlay()}
+async function reboot(){if(!(await ask('Gerät jetzt neu starten?')))return;try{await jpost('/api/reboot')}catch(e){};rebootOverlay()}
 
 boot()
 </script>
