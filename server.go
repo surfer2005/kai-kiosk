@@ -22,6 +22,12 @@ import (
 //go:embed kiosk.html
 var kioskHTML []byte
 
+//go:embed boot.html
+var bootHTML []byte
+
+//go:embed plymouth/logo.png
+var bootLogoPNG []byte
+
 // Quelle für den Self-Update ("Aktualisieren"-Knopf): die neueste Release-Binärdatei des Kiosk-Repos.
 const updateBase = "https://github.com/surfer2005/kai-kiosk/releases/latest/download"
 const ghLatestAPI = "https://api.github.com/repos/surfer2005/kai-kiosk/releases/latest"
@@ -227,6 +233,20 @@ func (a *App) routes() *http.ServeMux {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		_, _ = w.Write(kioskHTML)
+	})
+
+	// Markierter KAI-Ladebildschirm (Logo + Spinner): wird von kiosk-browser.sh SOFORT geöffnet und
+	// leitet selbst zu KAI weiter, sobald es erreichbar ist. So ist die Wartezeit bis zur Anmeldemaske
+	// nicht leeres Sandpapier, sondern KAI-Optik. Offen (nicht sensibel).
+	mux.HandleFunc("/boot", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		_, _ = w.Write(bootHTML)
+	})
+	mux.HandleFunc("/boot-logo.png", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "max-age=86400")
+		_, _ = w.Write(bootLogoPNG)
 	})
 
 	mux.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {

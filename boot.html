@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KAI wird geladen …</title>
+<style>
+  :root{ --paper:#F3F1EA; --ink:#101613; --teal:#1F6E5C; }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-user-select:none; user-select:none; cursor:none; overflow:hidden;
+  }
+  .wrap{ display:flex; flex-direction:column; align-items:center; gap:30px; }
+  .logo{ width:132px; height:132px; display:block; }
+  /* Drehender Teal-Ring — passt zum Boot-Splash (Plymouth) davor. */
+  .spinner{
+    width:44px; height:44px; border-radius:50%;
+    border:4px solid rgba(31,110,92,.18);
+    border-top-color:var(--teal);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .status{
+    min-height:1.2em; font-size:14px; letter-spacing:.3px; color:#6b746d;
+    opacity:0; transition:opacity .4s ease;
+  }
+  .status.show{ opacity:1; }
+  @media (prefers-reduced-motion:reduce){ .spinner{ animation-duration:2.4s; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" src="/boot-logo.png" alt="KAI">
+    <div class="spinner" role="status" aria-label="Lädt"></div>
+    <div class="status" id="status"></div>
+  </div>
+<script>
+(function(){
+  "use strict";
+  var FALLBACK_MS = 25000;   // notfalls nach 25 s trotzdem KAI öffnen (Offline-Cache greift ggf.)
+  var HINT_MS     = 6000;    // ab 6 s dezent "Warte auf Verbindung …" einblenden
+  var statusEl = document.getElementById('status');
+  var kaiUrl = '';
+  var started = Date.now();
+  var hintShown = false;
+
+  function pingUrl(u){ return u.replace(/\/+$/, '') + '/api/ping'; }
+
+  function showHint(){
+    if(hintShown) return; hintShown = true;
+    statusEl.textContent = 'Warte auf Verbindung …';
+    statusEl.classList.add('show');
+  }
+
+  function getTarget(){
+    return fetch('/api/target', {cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ kaiUrl = (j && j.kai_url ? String(j.kai_url) : '').trim(); })
+      .catch(function(){ /* Dienst noch nicht bereit — gleich erneut */ });
+  }
+
+  // no-cors: eine opake Antwort (auch 200/301/401) zählt als "erreichbar"; nur ein echter
+  // Netzwerkfehler wirft. Reicht als reine Erreichbarkeitsprüfung, ohne CORS-Header zu brauchen.
+  function reachable(u){
+    return fetch(pingUrl(u), {mode:'no-cors', cache:'no-store'})
+      .then(function(){ return true; })
+      .catch(function(){ return false; });
+  }
+
+  function go(u){ location.replace(u); }
+
+  function loop(){
+    if(!kaiUrl){
+      // Keine KAI-Adresse hinterlegt → zur Konfig-Seite (dort eintragen).
+      go('/');
+      return;
+    }
+    if(Date.now() - started > HINT_MS) showHint();
+    reachable(kaiUrl).then(function(ok){
+      if(ok){ go(kaiUrl); return; }
+      if(Date.now() - started > FALLBACK_MS){ go(kaiUrl); return; }
+      setTimeout(loop, 1500);
+    });
+  }
+
+  getTarget().then(loop);
+})();
+</script>
+</body>
+</html>

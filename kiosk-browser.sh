@@ -44,35 +44,21 @@ d['credentials_enable_autosignin']=False
 json.dump(d,open(p,'w'))
 PY
 
-# 1) IMMER zuerst auf den lokalen Konfig-Dienst warten (kommt beim Boot in Sekunden). Sonst öffnet
-#    Chromium localhost, bevor der Dienst lauscht → "Diese Seite ist nicht erreichbar / localhost".
+# IMMER zuerst auf den lokalen Konfig-Dienst warten (kommt beim Boot in Sekunden). Sonst öffnet
+# Chromium localhost, bevor der Dienst lauscht → "Diese Seite ist nicht erreichbar / localhost".
 if command -v curl >/dev/null 2>&1; then
   for i in $(seq 1 60); do
     curl -fsS --max-time 2 -o /dev/null "http://127.0.0.1:8091/api/needs-login" 2>/dev/null && break
     sleep 1
   done
-  # KAI-Adresse vom (root-)Dienst holen — umgeht das Dateirecht-Problem der config.json.
-  URL=$(curl -fsS --max-time 3 "http://127.0.0.1:8091/api/target" 2>/dev/null \
-        | sed -n 's/.*"kai_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
-fi
-# Rückfall: falls der Dienst die Adresse (noch) nicht liefert, direkt aus der Datei versuchen.
-if [ -z "$URL" ] && [ -r "$CFG" ]; then
-  URL=$(python3 -c "import json,sys;print(json.load(open('$CFG')).get('kai_url',''))" 2>/dev/null)
 fi
 
-# 2) Keine KAI-Adresse hinterlegt → Konfig-Seite (dort Adresse eintragen). Sonst KAI DIREKT öffnen
-#    (der Service-Worker macht das Terminal offline-fähig). Dem Netz beim Boot kurz Zeit geben, aber
-#    NICHT auf localhost zurückfallen — das würde den Offline-Betrieb brechen und fälschlich die
-#    Konfig-Seite zeigen. Ist beim allerersten Start kein Netz da, zeigt Chromium kurz einen Fehler
-#    und lädt KAI, sobald das Netz steht (danach greift der Offline-Cache).
-if [ -z "$URL" ]; then
-  URL="http://localhost:8091"
-elif command -v curl >/dev/null 2>&1; then
-  for i in $(seq 1 20); do
-    curl -fsSL --max-time 3 -o /dev/null "$URL" 2>/dev/null && break
-    sleep 1
-  done
-fi
+# Chromium öffnet SOFORT den markierten KAI-Ladebildschirm des lokalen Dienstes (Logo + Spinner auf
+# KAI-Papier). Diese Seite holt selbst die KAI-Adresse (/api/target), wartet per Erreichbarkeitsprüfung
+# auf das Netz und leitet dann zu KAI weiter (bzw. zur Konfig-Seite, falls keine Adresse hinterlegt ist).
+# So ist die Wartezeit bis zur Anmeldemaske nicht leeres Sandpapier, sondern KAI-Optik — und das frühere
+# Netz-Warten mit schwarzem/leerem Bildschirm entfällt. Danach greift der Service-Worker (Offline).
+URL="http://127.0.0.1:8091/boot"
 
 exec "$BIN" \
   --kiosk --app="$URL" \
