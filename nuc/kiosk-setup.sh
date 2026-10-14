@@ -82,5 +82,10 @@ if [ -f /etc/default/grub ]; then
   fi
   update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
 fi
+# Intel-Grafik (i915) früh ins initramfs → KMS-Framebuffer steht beim Boot, damit der Splash
+# überhaupt erscheint (häufige Ursache für "Splash geht nicht" auf Intel-NUCs = kein früher FB).
+if [ -f /etc/initramfs-tools/modules ] && ! grep -q '^i915' /etc/initramfs-tools/modules; then
+  echo i915 >>/etc/initramfs-tools/modules
+fi
 update-initramfs -u 2>/dev/null || true
 exit 0
