@@ -23,6 +23,12 @@ autologin-user-timeout=0
 autologin-session=openbox
 user-session=openbox
 EOF
+# ⚠️ Debian/LightDM lässt den Auto-Login NUR zu, wenn der Benutzer in der Gruppe 'autologin' ist
+# (PAM: /etc/pam.d/lightdm-autologin → pam_succeed_if user ingroup autologin). Fehlt die Gruppe,
+# bleibt der NUC-Bildschirm am grauen Login-Prompt stehen und Chromium (die KAI-PWA) startet nie —
+# obwohl die Konfig-Seite (:8091) über LAN weiter erreichbar ist.
+groupadd -f autologin
+usermod -aG autologin "$KIOSK_USER"
 mkdir -p /etc/xdg/openbox
 cat >/etc/xdg/openbox/autostart <<EOF
 # KAI-Kiosk: Chromium im Vollbild starten
