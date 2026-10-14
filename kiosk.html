@@ -76,7 +76,12 @@
       <input type="text" id="kai_url" placeholder="https://kai.beispiel.de">
       <div class="hint">Hier die KAI-Adresse eintragen (Muster: <code>https://kai.beispiel.de</code>). Nach dem Ändern Gerät neu starten, damit die neue Adresse greift.</div>
     </div>
-    <div class="actions"><button class="btn ghost" onclick="testUrl()">Adresse öffnen &amp; testen</button></div>
+    <div class="actions">
+      <button class="btn" onclick="saveUrlReboot()">Adresse speichern &amp; Gerät neu starten</button>
+      <button class="btn ghost" onclick="saveCfg()">Nur speichern</button>
+      <button class="btn ghost" onclick="testUrl()">Adresse öffnen &amp; testen</button>
+    </div>
+    <div class="hint" style="margin-top:8px">Erst die Adresse <b>speichern</b>, dann startet das Gerät damit ins KAI-Vollbild. Ohne Speichern öffnet das Terminal wieder diese Konfig-Seite.</div>
   </section>
 
   <section class="card">
@@ -220,6 +225,15 @@ function curCfg(){
 async function saveCfg(){
   const r=await jpost('/api/config',curCfg());const j=await r.json().catch(()=>({}))
   if(r.ok&&j.ok){toast('Gespeichert');load()}else{toast('Fehler: '+((j&&j.error)||r.status),1)}
+}
+async function saveUrlReboot(){
+  const u=$('kai_url').value.trim()
+  if(!u){toast('Bitte zuerst eine KAI-Adresse eintragen',1);return}
+  if(!(await ask('Adresse speichern und Gerät jetzt neu starten?\n\n'+u)))return
+  const r=await jpost('/api/config',curCfg());const j=await r.json().catch(()=>({}))
+  if(!(r.ok&&j.ok)){toast('Speichern fehlgeschlagen: '+((j&&j.error)||r.status),1);return}
+  toast('Gespeichert — Gerät startet neu …')
+  try{await jpost('/api/reboot')}catch(e){}
 }
 async function saveNet(){
   const c=curCfg().network
