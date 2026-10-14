@@ -85,7 +85,12 @@ if [ -f /etc/default/grub ]; then
   else
     echo 'GRUB_GFXPAYLOAD_LINUX=keep' >>/etc/default/grub
   fi
+  # "Loading Linux ..."/"Loading initial ramdisk ..." (GRUB-eigene echo-Zeilen) unterdrücken —
+  # dauerhaft in 10_linux, damit sie auch nach einem künftigen update-grub wegbleiben.
+  [ -f /etc/grub.d/10_linux ] && sed -i '/echo.*\$message.*grub_quote/d; /Loading initial ramdisk/d' /etc/grub.d/10_linux 2>/dev/null || true
   update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+  # Sicherheitsnetz: etwaige verbliebene "Loading ..."-Echos aus der fertigen grub.cfg entfernen.
+  [ -f /boot/grub/grub.cfg ] && sed -i '/^[[:space:]]*echo[[:space:]].*Loading/d' /boot/grub/grub.cfg 2>/dev/null || true
 fi
 # Intel-Grafik (i915) früh ins initramfs → KMS-Framebuffer steht beim Boot, damit der Splash
 # überhaupt erscheint (häufige Ursache für "Splash geht nicht" auf Intel-NUCs = kein früher FB).
