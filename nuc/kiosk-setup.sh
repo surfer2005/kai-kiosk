@@ -11,6 +11,9 @@ KIOSK_USER=kiosk
 install -Dm0755 "$SRC/kai-kiosk"        "$PREFIX/kai-kiosk"
 install -Dm0755 "$SRC/kiosk-browser.sh" "$PREFIX/kiosk-browser.sh"
 install -Dm0644 "$SRC/kai-kiosk.service" /etc/systemd/system/kai-kiosk.service
+# KAI-Logo systemweit ablegen → kiosk-browser.sh legt es während des Chromium-Kaltstarts mittig auf
+# den X-Hintergrund (sonst leeres Sandpapier in dieser Lücke). feh malt es (s. u.).
+[ -f "$SRC/plymouth/logo.png" ] && install -Dm0644 "$SRC/plymouth/logo.png" /usr/local/share/kai-kiosk/logo.png
 mkdir -p "$CFG"
 [ -f "$CFG/config.json" ] || install -Dm0600 "$SRC/config.json" "$CFG/config.json"
 
@@ -56,6 +59,9 @@ systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null
 systemctl enable x11vnc.service 2>/dev/null
 systemctl enable kai-kiosk.service 2>/dev/null
 systemctl set-default graphical.target 2>/dev/null
+
+# feh: legt das KAI-Logo während des Chromium-Kaltstarts mittig auf den X-Hintergrund (s. kiosk-browser.sh).
+command -v feh >/dev/null 2>&1 || apt-get -y install feh 2>/dev/null
 
 # Sauberer Boot: grafischer Splash mit KAI-Logo + drehendem Ring statt Textausgabe + GRUB-Menü.
 command -v plymouth-set-default-theme >/dev/null 2>&1 || apt-get -y install plymouth plymouth-themes 2>/dev/null

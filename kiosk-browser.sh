@@ -21,8 +21,9 @@ mkdir -p "$PROFILE"
 
 # Bildschirmschoner/Energiesparen aus (Terminal soll immer an sein).
 command -v xset >/dev/null 2>&1 && { xset s off; xset -dpms; xset s noblank; } 2>/dev/null
-# Hintergrund der X-Sitzung auf KAI-Papier (#F3F1EA) setzen, damit die Wartezeit bis Chromium NICHT
-# schwarz ist, sondern nahtlos zum Boot-Splash + zur hellen KAI-Anmeldemaske passt.
+# Hintergrund der X-Sitzung SOFORT auf KAI-Papier (#F3F1EA) setzen, damit die Wartezeit bis Chromium
+# NICHT schwarz ist, sondern nahtlos zum Boot-Splash + zur hellen KAI-Anmeldemaske passt. Das KAI-Logo
+# wird gleich darunter (nach Start des lokalen Dienstes) zusätzlich mittig daraufgelegt (s. u.).
 command -v xsetroot >/dev/null 2>&1 && xsetroot -solid "#F3F1EA" 2>/dev/null || true
 
 # Absturz-/Wiederherstellungs-Dialoge der letzten Sitzung unterdrücken (sonst bleibt ein Banner stehen)
@@ -51,6 +52,23 @@ if command -v curl >/dev/null 2>&1; then
     curl -fsS --max-time 2 -o /dev/null "http://127.0.0.1:8091/api/needs-login" 2>/dev/null && break
     sleep 1
   done
+fi
+
+# KAI-Logo mittig auf das Papier legen — füllt die Lücke, die der /boot-Ladebildschirm NICHT abdecken
+# kann: die Sekunden zwischen "X ist da" und "Chromium malt die erste Seite" (Chromium-Kaltstart).
+# Ohne das sieht man dort nur leeres Sandpapier. Das Logo liefert der lokale Dienst offen unter
+# /boot-logo.png; wir legen es in einen beschreibbaren Cache (der Starter läuft als Benutzer "kiosk"
+# und darf nicht nach /usr/local schreiben) und setzen es per feh als Hintergrundbild. Bevorzugt ein
+# schon systemweit installiertes Logo. Fehlt feh (Altinstallation), bleibt es beim reinen Papier.
+LOGO="/usr/local/share/kai-kiosk/logo.png"
+if [ ! -f "$LOGO" ]; then
+  LOGO="${HOME:-/home/kiosk}/.cache/kai-kiosk/logo.png"
+  mkdir -p "$(dirname "$LOGO")"
+  command -v curl >/dev/null 2>&1 && \
+    curl -fsS --max-time 5 -o "$LOGO" "http://127.0.0.1:8091/boot-logo.png" 2>/dev/null || true
+fi
+if command -v feh >/dev/null 2>&1 && [ -s "$LOGO" ]; then
+  feh --no-fehbg --bg-center --image-bg "#F3F1EA" "$LOGO" 2>/dev/null || true
 fi
 
 # Chromium öffnet SOFORT den markierten KAI-Ladebildschirm des lokalen Dienstes (Logo + Spinner auf
