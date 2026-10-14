@@ -120,3 +120,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.pack.outputs.path }}
+          # NICHT als „Latest" markieren — sonst zeigt der Binary-Self-Update-Weg
+          # (releases/latest/download) auf dieses Image-Release ohne kai-kiosk-Binary.
+          make_latest: false

@@ -24,9 +24,24 @@ mkdir -p "$PROFILE"
 # Bildschirmschoner/Energiesparen aus (Terminal soll immer an sein).
 command -v xset >/dev/null 2>&1 && { xset s off; xset -dpms; xset s noblank; } 2>/dev/null
 
-# Absturz-/Wiederherstellungs-Dialoge der letzten Sitzung unterdrücken (sonst bleibt ein Banner stehen).
-sed -i 's/"exited_cleanly":false/"exited_cleanly":true/; s/"exit_type":"[^"]*"/"exit_type":"Normal"/' \
-  "$PROFILE/Default/Preferences" 2>/dev/null || true
+# Absturz-/Wiederherstellungs-Dialoge der letzten Sitzung unterdrücken (sonst bleibt ein Banner stehen)
+# UND Chromium-Passwortmanager/„Passwort speichern?"-Abfrage am Terminal aus.
+mkdir -p "$PROFILE/Default"
+python3 - "$PROFILE/Default/Preferences" <<'PY' 2>/dev/null || true
+import json,sys
+p=sys.argv[1]
+try: d=json.load(open(p))
+except Exception: d={}
+d.setdefault('profile',{})
+d['profile']['exit_type']='Normal'
+d['profile']['exited_cleanly']=True
+d['profile']['password_manager_enabled']=False
+d.setdefault('credentials_enable_service',False)
+d['credentials_enable_service']=False
+d.setdefault('credentials_enable_autosignin',False)
+d['credentials_enable_autosignin']=False
+json.dump(d,open(p,'w'))
+PY
 
 exec "$BIN" \
   --kiosk --app="$URL" \

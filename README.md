@@ -62,8 +62,11 @@ sudo bash install.sh
 
 ⚠️ **Image-Release NICHT „Latest":** der „Aktualisieren"-Knopf zieht
 `releases/latest/download/kai-kiosk-<arch>` — in einem Image-Release liegt kein Binary (→ 404).
-Nach einem `img-*`-Tag daher das jüngste **Binary**-Release mit `gh release edit vX --latest`
-als „Latest" setzen (gleiche Falle wie beim Bordwächter-Gerät).
+Die Image-Workflows (`image.yml`/`image-nuc.yml`) setzen deshalb `make_latest: false`, sodass ein
+`img-*`/`nuc-*`-Release **nie** „Latest" wird. „Latest" bleibt automatisch das jüngste **Binary**-
+Release (Tag `v*`). Nur falls doch einmal ein Image fälschlich „Latest" ist (Altbestand), das jüngste
+Binary-Release manuell mit `gh release edit vX.Y.Z --latest` zurücksetzen (gleiche Falle wie beim
+Bordwächter-Gerät).
 
 ## Intel-NUC (x86 / amd64)
 Das `.img.xz` ist ein **Raspberry-Pi-Image (ARM64)** und läuft **nicht** auf einem Intel-NUC. Für NUCs:

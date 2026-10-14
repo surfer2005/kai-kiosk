@@ -51,6 +51,12 @@
  .login.show{display:flex}
  .login .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;max-width:360px;width:100%;display:flex;flex-direction:column;gap:14px}
  .login h2{margin:0;font-size:1.05rem}
+ /* Inline-Abfrage (wie beim Bordwächter-Gerät) statt des Browser-confirm() */
+ #ask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;place-items:center;z-index:120;padding:16px}
+ #ask.show{display:grid}
+ #ask .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;width:100%;max-width:420px;box-shadow:0 16px 44px rgba(0,0,0,.35)}
+ #ask .msg{font-size:1rem;margin-bottom:18px;line-height:1.4}
+ #ask .btns{display:flex;gap:10px;justify-content:flex-end}
  #netstatic{display:none}
  #netstatic.show{display:block}
 </style>
@@ -100,7 +106,7 @@
     <div class="row">
       <div class="field">
         <label>VNC-Passwort (Fernzugriff)</label>
-        <input type="password" id="vnc_password" placeholder="leer = unverändert">
+        <input type="password" id="vnc_password" autocomplete="off" placeholder="leer = unverändert">
         <div class="hint">Für die Bildschirm-Fernwartung. Greift nach Geräte-Neustart.</div>
       </div>
       <div class="field">
@@ -111,7 +117,7 @@
     </div>
     <div class="field">
       <label>Passwort der Konfig-Seite</label>
-      <input type="password" id="ui_password" placeholder="leer = offen im LAN">
+      <input type="password" id="ui_password" autocomplete="off" placeholder="leer = offen im LAN">
       <div class="hint">Schützt diese Seite. Leer = im lokalen Netz ohne Passwort erreichbar.</div>
     </div>
     <div class="actions"><button class="btn" onclick="saveCfg()">Einstellungen speichern</button></div>
@@ -142,11 +148,13 @@
 <div class="login" id="login">
   <div class="box">
     <h2>KAI-Kiosk — Anmelden</h2>
-    <input type="password" id="loginpw" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="loginpw" name="kai-konfig-pw" autocomplete="off" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" onclick="doLogin()">Anmelden</button>
     <div class="hint" id="loginerr" style="color:var(--red);display:none">Passwort falsch</div>
   </div>
 </div>
+
+<div id="ask"><div class="box"><div class="msg" id="askmsg"></div><div class="btns"><button class="btn ghost" id="askno">Abbrechen</button><button class="btn" id="askyes">OK</button></div></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -157,6 +165,14 @@ async function jget(u){const r=await fetch(u,{headers:{'Cache-Control':'no-store
 async function jpost(u,body){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):'{}'});return r}
 
 function setMode(m){document.querySelectorAll('#netmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('netstatic').classList.toggle('show',m==='static')}
+
+// Inline-Abfrage (Ja/Nein) direkt in der Seite — wie beim Bordwächter-Gerät, statt des Browser-confirm().
+function ask(msg){return new Promise(function(res){
+  $('askmsg').textContent=msg;$('ask').classList.add('show')
+  function done(v){$('ask').classList.remove('show');$('askyes').onclick=null;$('askno').onclick=null;document.onkeydown=null;res(v)}
+  $('askyes').onclick=function(){done(true)};$('askno').onclick=function(){done(false)}
+  document.onkeydown=function(e){if(e.key==='Enter')done(true);if(e.key==='Escape')done(false)}
+})}
 
 async function boot(){
   // Anmeldung nötig?
@@ -228,15 +244,15 @@ async function checkUpdate(){
   }catch(e){$('curver').textContent='—'}
 }
 async function doUpdate(){
-  if(!confirm('Neueste Version aus GitHub holen und Dienst neu starten?'))return
+  if(!(await ask('Neueste Version aus GitHub holen und Dienst neu starten?')))return
   $('updbtn').disabled=true;toast('Aktualisiere …')
   try{const r=await jpost('/api/update');const j=await r.json().catch(()=>({}))
     if(j.ok){toast('Aktualisiert — Neustart läuft');setTimeout(()=>location.reload(),4000)}
     else{toast('Update fehlgeschlagen: '+((j&&j.error)||''),1);$('updbtn').disabled=false}
   }catch(e){toast('Neustart läuft …');setTimeout(()=>location.reload(),5000)}
 }
-async function restartSvc(){if(!confirm('Konfig-Dienst neu starten?'))return;try{await jpost('/api/restart')}catch(e){};toast('Neustart läuft …');setTimeout(()=>location.reload(),3500)}
-async function reboot(){if(!confirm('Gerät jetzt neu starten?'))return;try{await jpost('/api/reboot')}catch(e){};toast('Gerät startet neu …')}
+async function restartSvc(){if(!(await ask('Konfig-Dienst neu starten?')))return;try{await jpost('/api/restart')}catch(e){};toast('Neustart läuft …');setTimeout(()=>location.reload(),3500)}
+async function reboot(){if(!(await ask('Gerät jetzt neu starten?')))return;try{await jpost('/api/reboot')}catch(e){};toast('Gerät startet neu …')}
 
 boot()
 </script>
