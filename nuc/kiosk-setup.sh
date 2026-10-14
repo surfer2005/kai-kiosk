@@ -56,4 +56,24 @@ systemctl enable ssh 2>/dev/null || systemctl enable sshd 2>/dev/null
 systemctl enable x11vnc.service 2>/dev/null
 systemctl enable kai-kiosk.service 2>/dev/null
 systemctl set-default graphical.target 2>/dev/null
+
+# Sauberer Boot: grafischer Splash mit Spinner („Kringel") statt Textausgabe + GRUB-Menü (Nutzerwunsch).
+command -v plymouth-set-default-theme >/dev/null 2>&1 || apt-get -y install plymouth plymouth-themes 2>/dev/null
+plymouth-set-default-theme spinner 2>/dev/null || true
+if [ -f /etc/default/grub ]; then
+  sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub || true
+  if grep -q '^GRUB_TIMEOUT_STYLE=' /etc/default/grub; then
+    sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub
+  else
+    echo 'GRUB_TIMEOUT_STYLE=hidden' >>/etc/default/grub
+  fi
+  # still + Splash + kein blinkender Text-Cursor; Logo/Hersteller-Meldungen aus.
+  if grep -q '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub; then
+    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore-serial-consoles"/' /etc/default/grub
+  else
+    echo 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore-serial-consoles"' >>/etc/default/grub
+  fi
+  update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+fi
+update-initramfs -u 2>/dev/null || true
 exit 0
