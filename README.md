@@ -65,6 +65,25 @@ sudo bash install.sh
 Nach einem `img-*`-Tag daher das jüngste **Binary**-Release mit `gh release edit vX --latest`
 als „Latest" setzen (gleiche Falle wie beim Bordwächter-Gerät).
 
+## Intel-NUC (x86 / amd64)
+Das `.img.xz` ist ein **Raspberry-Pi-Image (ARM64)** und läuft **nicht** auf einem Intel-NUC. Für NUCs:
+
+**A) Risikoarm, sofort nutzbar — `install-nuc.sh`:** auf dem NUC ein Standard-**Debian 12** (oder Ubuntu)
+installieren, dann:
+```bash
+git clone https://github.com/surfer2005/kai-kiosk.git && cd kai-kiosk
+sudo bash install-nuc.sh    # holt das amd64-Programm aus dem Release, richtet Autologin+Kiosk+SSH+VNC ein
+sudo reboot
+```
+Für **viele gleiche NUCs**: ein Gerät so einrichten, dann die interne SSD einmal klonen (Clonezilla/`dd`).
+
+**B) Vollautomatischer Autoinstall-USB (EXPERIMENTELL) — `image-nuc.yml`:** baut aus dem offiziellen
+Debian-netinst-ISO einen unbeaufsichtigten Installer (`nuc/preseed.cfg` + `nuc/kiosk-setup.sh`). USB rein,
+NUC booten → installiert sich selbst auf die interne Platte. Release per Tag `nuc-*` → `kai-kiosk-nuc-<datum>.iso`.
+⚠️ **LÖSCHT die erste Festplatte** und ist noch **nicht auf echter Hardware verifiziert** — zuerst auf
+einer Test-NUC prüfen, bevor er auf Produktivgeräte kommt. ⚠️ VNC läuft auf dem NUC über **x11vnc** (nicht
+RealVNC wie am Pi); die VNC-Passwort-Integration der Konfig-Seite greift hier noch nicht.
+
 ## Quelle
 Dieses Verzeichnis ist ein eigenständiges Go-Modul und wird in das GitHub-Repo
 `surfer2005/kai-kiosk` gespiegelt (Releases + Image dort).
