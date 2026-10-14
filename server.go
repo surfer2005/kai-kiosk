@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -322,5 +323,41 @@ func (a *App) routes() *http.ServeMux {
 		}()
 	}))
 
+	// Aktuelle Netzwerk-Info (z. B. per DHCP bezogene IP) für die Anzeige in der Konfig-Seite.
+	// Offen (ohne Login), damit man im LAN die IP ablesen kann; liefert nur IPv4-Adressen + Hostname.
+	mux.HandleFunc("/api/netinfo", func(w http.ResponseWriter, r *http.Request) {
+		host, _ := os.Hostname()
+		writeJSON(w, map[string]any{"ips": localIPv4s(), "hostname": host})
+	})
+
 	return mux
+}
+
+// localIPv4s liefert die nicht-loopback IPv4-Adressen aller aktiven Schnittstellen (meist eine, per DHCP).
+func localIPv4s() []string {
+	out := []string{}
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return out
+	}
+	for _, ifc := range ifaces {
+		if ifc.Flags&net.FlagUp == 0 || ifc.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, _ := ifc.Addrs()
+		for _, a := range addrs {
+			var ip net.IP
+			switch v := a.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() || ip.To4() == nil {
+				continue
+			}
+			out = append(out, ip.To4().String())
+		}
+	}
+	return out
 }

@@ -87,6 +87,10 @@
   <section class="card">
     <h2>Netzwerk</h2>
     <div class="field">
+      <label>Aktuelle IP-Adresse</label>
+      <div class="hint" id="curip" style="font-family:var(--mono);font-size:.95rem;color:var(--ink)">—</div>
+    </div>
+    <div class="field">
       <label>IP-Bezug</label>
       <div class="seg" id="netmode">
         <button type="button" data-m="dhcp" onclick="setMode('dhcp')">Automatisch (DHCP)</button>
@@ -184,7 +188,12 @@ async function boot(){
   try{const n=await jget('/api/needs-login');if(n.needsLogin&&!n.authed){$('login').classList.add('show');return}}catch(e){}
   show()
 }
-function show(){$('login').classList.remove('show');$('app').style.display='flex';load();checkUpdate()}
+function show(){$('login').classList.remove('show');$('app').style.display='flex';load();checkUpdate();loadNet();setInterval(loadNet,5000)}
+async function loadNet(){
+  try{const j=await jget('/api/netinfo')
+    $('curip').textContent=(j.ips&&j.ips.length?j.ips.join(', '):'noch keine IP — Netzwerk/LAN nicht verbunden?')+(j.hostname?'  ·  '+j.hostname:'')
+  }catch(e){$('curip').textContent='—'}
+}
 async function doLogin(){
   const r=await jpost('/api/login',{username:'admin',password:$('loginpw').value})
   const j=await r.json()

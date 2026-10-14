@@ -43,6 +43,25 @@ d['credentials_enable_autosignin']=False
 json.dump(d,open(p,'w'))
 PY
 
+# Beim Booten ist das LAN/DNS oft noch nicht da → Chromium zeigte sonst eine Fehlerseite und blieb
+# darauf hängen. Deshalb auf die Erreichbarkeit der KAI-Adresse warten (max. ~60 s). Für die lokale
+# Konfig-Seite wird nicht gewartet. Bleibt die KAI-Adresse unerreichbar, zeigen wir die Konfig-Seite
+# (dort steht die aktuelle IP) statt einer Browser-Fehlerseite.
+case "$URL" in
+  http://localhost*|http://127.*) : ;;
+  *)
+    if command -v curl >/dev/null 2>&1; then
+      ok=0; deadline=$(( $(date +%s) + 60 ))
+      while :; do
+        if curl -fsSL --max-time 4 -o /dev/null "$URL" 2>/dev/null; then ok=1; break; fi
+        [ "$(date +%s)" -ge "$deadline" ] && break
+        sleep 2
+      done
+      [ "$ok" = 1 ] || URL="http://localhost:8091"
+    fi
+  ;;
+esac
+
 exec "$BIN" \
   --kiosk --app="$URL" \
   --user-data-dir="$PROFILE" \
