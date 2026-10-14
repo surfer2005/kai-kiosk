@@ -10,9 +10,8 @@ URL=""
 if [ -r "$CFG" ]; then
   URL=$(python3 -c "import json,sys;print(json.load(open('$CFG')).get('kai_url',''))" 2>/dev/null)
 fi
-# Keine Adresse gesetzt → lokale Konfig-Seite öffnen, damit man die Adresse eintragen kann
-# (die echte KAI-Adresse steht bewusst nicht fest in der Quelle, s. README).
-[ -n "$URL" ] || URL="http://localhost:8091"
+# Hinweis: ist keine Adresse gesetzt, wird weiter unten (nach dem Warten auf den lokalen Dienst)
+# die Konfig-Seite geöffnet, damit man die Adresse eintragen kann.
 
 # Chromium heißt je nach OS-Fassung "chromium-browser" oder "chromium".
 BIN=chromium-browser
@@ -43,24 +42,28 @@ d['credentials_enable_autosignin']=False
 json.dump(d,open(p,'w'))
 PY
 
-# Beim Booten ist das LAN/DNS oft noch nicht da → Chromium zeigte sonst eine Fehlerseite und blieb
-# darauf hängen. Deshalb auf die Erreichbarkeit der KAI-Adresse warten (max. ~60 s). Für die lokale
-# Konfig-Seite wird nicht gewartet. Bleibt die KAI-Adresse unerreichbar, zeigen wir die Konfig-Seite
-# (dort steht die aktuelle IP) statt einer Browser-Fehlerseite.
-case "$URL" in
-  http://localhost*|http://127.*) : ;;
-  *)
-    if command -v curl >/dev/null 2>&1; then
-      ok=0; deadline=$(( $(date +%s) + 60 ))
-      while :; do
-        if curl -fsSL --max-time 4 -o /dev/null "$URL" 2>/dev/null; then ok=1; break; fi
-        [ "$(date +%s)" -ge "$deadline" ] && break
-        sleep 2
-      done
-      [ "$ok" = 1 ] || URL="http://localhost:8091"
-    fi
-  ;;
-esac
+# 1) IMMER zuerst auf den lokalen Konfig-Dienst warten (kommt beim Boot in Sekunden). Sonst öffnet
+#    Chromium localhost, bevor der Dienst lauscht → "Diese Seite ist nicht erreichbar / localhost".
+if command -v curl >/dev/null 2>&1; then
+  for i in $(seq 1 60); do
+    curl -fsS --max-time 2 -o /dev/null "http://127.0.0.1:8091/api/needs-login" 2>/dev/null && break
+    sleep 1
+  done
+fi
+
+# 2) Keine KAI-Adresse hinterlegt → Konfig-Seite (dort Adresse eintragen). Sonst KAI DIREKT öffnen
+#    (der Service-Worker macht das Terminal offline-fähig). Dem Netz beim Boot kurz Zeit geben, aber
+#    NICHT auf localhost zurückfallen — das würde den Offline-Betrieb brechen und fälschlich die
+#    Konfig-Seite zeigen. Ist beim allerersten Start kein Netz da, zeigt Chromium kurz einen Fehler
+#    und lädt KAI, sobald das Netz steht (danach greift der Offline-Cache).
+if [ -z "$URL" ]; then
+  URL="http://localhost:8091"
+elif command -v curl >/dev/null 2>&1; then
+  for i in $(seq 1 20); do
+    curl -fsSL --max-time 3 -o /dev/null "$URL" 2>/dev/null && break
+    sleep 1
+  done
+fi
 
 exec "$BIN" \
   --kiosk --app="$URL" \

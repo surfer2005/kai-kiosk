@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -72,7 +73,39 @@ func selfUpdate() error {
 		os.Remove(tmp)
 		return err
 	}
+	// Best-effort: auch das Start-Skript mitziehen, damit "Aktualisieren" das Gerät VOLLSTÄNDIG aktuell
+	// hält (das Skript liegt auf der Platte, nicht in der Binärdatei). Fehler hier brechen das Update nicht.
+	updateHelperFiles(exe)
 	return nil
+}
+
+// updateHelperFiles holt die Hilfsdateien (derzeit kiosk-browser.sh) frisch aus dem Repo und legt sie
+// neben die Binärdatei. Best-effort: schlägt es fehl, bleibt die vorhandene Datei stehen.
+func updateHelperFiles(exe string) {
+	dir := filepath.Dir(exe)
+	files := map[string]string{
+		"kiosk-browser.sh": "https://raw.githubusercontent.com/surfer2005/kai-kiosk/main/kiosk-browser.sh",
+	}
+	cl := &http.Client{Timeout: 30 * time.Second}
+	for name, url := range files {
+		resp, err := cl.Get(url)
+		if err != nil || resp.StatusCode != 200 {
+			if resp != nil {
+				resp.Body.Close()
+			}
+			continue
+		}
+		b, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+		resp.Body.Close()
+		if err != nil || len(b) < 50 {
+			continue
+		}
+		dst := filepath.Join(dir, name)
+		tmp := dst + ".new"
+		if os.WriteFile(tmp, b, 0o755) == nil {
+			_ = os.Rename(tmp, dst)
+		}
+	}
 }
 
 // Versionsprüfung: liegt in GitHub eine neuere Version als die laufende vor? 1 h zwischengespeichert;
