@@ -79,6 +79,12 @@ if [ -f /etc/default/grub ]; then
   else
     echo 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore-serial-consoles"' >>/etc/default/grub
   fi
+  # Grafikmodus von GRUB in den Kernel beibehalten → weniger schwarze Modus-Umschaltungen beim Boot.
+  if grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub; then
+    sed -i 's/^GRUB_GFXPAYLOAD_LINUX=.*/GRUB_GFXPAYLOAD_LINUX=keep/' /etc/default/grub
+  else
+    echo 'GRUB_GFXPAYLOAD_LINUX=keep' >>/etc/default/grub
+  fi
   update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
 fi
 # Intel-Grafik (i915) früh ins initramfs → KMS-Framebuffer steht beim Boot, damit der Splash

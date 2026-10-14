@@ -21,6 +21,9 @@ mkdir -p "$PROFILE"
 
 # Bildschirmschoner/Energiesparen aus (Terminal soll immer an sein).
 command -v xset >/dev/null 2>&1 && { xset s off; xset -dpms; xset s noblank; } 2>/dev/null
+# Hintergrund der X-Sitzung auf KAI-Papier (#F3F1EA) setzen, damit die Wartezeit bis Chromium NICHT
+# schwarz ist, sondern nahtlos zum Boot-Splash + zur hellen KAI-Anmeldemaske passt.
+command -v xsetroot >/dev/null 2>&1 && xsetroot -solid "#F3F1EA" 2>/dev/null || true
 
 # Absturz-/Wiederherstellungs-Dialoge der letzten Sitzung unterdrücken (sonst bleibt ein Banner stehen)
 # UND Chromium-Passwortmanager/„Passwort speichern?"-Abfrage am Terminal aus.
