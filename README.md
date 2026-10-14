@@ -80,6 +80,9 @@ Für **viele gleiche NUCs**: ein Gerät so einrichten, dann die interne SSD einm
 **B) Vollautomatischer Autoinstall-USB (EXPERIMENTELL) — `image-nuc.yml`:** baut aus dem offiziellen
 Debian-netinst-ISO einen unbeaufsichtigten Installer (`nuc/preseed.cfg` + `nuc/kiosk-setup.sh`). USB rein,
 NUC booten → installiert sich selbst auf die interne Platte. Release per Tag `nuc-*` → `kai-kiosk-nuc-<datum>.iso`.
+⚠️ **LAN-Kabel beim Installieren anschließen** (netinst holt die Pakete übers Netz). Der preseed wählt
+immer das kabelgebundene Interface (en*/eth*), nie WLAN — ohne Kabel bliebe der Installer sonst an der
+WLAN-Passphrase-Abfrage hängen.
 ⚠️ **LÖSCHT die erste Festplatte** und ist noch **nicht auf echter Hardware verifiziert** — zuerst auf
 einer Test-NUC prüfen, bevor er auf Produktivgeräte kommt. ⚠️ VNC läuft auf dem NUC über **x11vnc** (nicht
 RealVNC wie am Pi); die VNC-Passwort-Integration der Konfig-Seite greift hier noch nicht.
