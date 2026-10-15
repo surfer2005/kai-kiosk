@@ -16,6 +16,8 @@ type Config struct {
 	UIPassword  string `json:"ui_password"`  // Schutz der lokalen Konfig-Seite (leer = offen im LAN)
 	VNCPassword string `json:"vnc_password"` // Passwort für den VNC-Fernzugriff (leer = unverändert lassen)
 	DeviceToken string `json:"device_token"` // Geräte-Token (vertrauenswürdiges Terminal) — greift, sobald KAI die Token-Auth hat
+	Hostname    string `json:"hostname"`     // Gerätename (hostnamectl + /etc/hosts); Gerät danach als <hostname>.local erreichbar
+	SSHPassword string `json:"ssh_password"` // Passwort des SSH-Benutzers "pi" (leer = unverändert / Image-Standard "kai-terminal")
 	// Uhr nach KAI stellen: das Terminal liest periodisch die Serverzeit (Date-Header der KAI-Adresse)
 	// und korrigiert bei Abweichung seine Systemuhr. So folgt die ganze Flotte EINER Zeit (der KAI-
 	// Serveruhr) und nichts läuft auseinander — auch dort, wo kein NTP erreichbar ist. Vorgabe: an.
@@ -44,6 +46,7 @@ func defaultConfig() *Config {
 	}
 	c.Network.Mode = "dhcp"
 	c.Network.Interface = "eth0"
+	c.Hostname = "kai-kiosk"
 	return c
 }
 

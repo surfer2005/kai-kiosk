@@ -414,7 +414,11 @@ func (a *App) routes() *http.ServeMux {
 	// Offen (ohne Login), damit man im LAN die IP ablesen kann; liefert nur IPv4-Adressen + Hostname.
 	mux.HandleFunc("/api/netinfo", func(w http.ResponseWriter, r *http.Request) {
 		host, _ := os.Hostname()
-		writeJSON(w, map[string]any{"ips": localIPv4s(), "hostname": host})
+		m := map[string]any{"ips": localIPv4s(), "hostname": host}
+		for k, v := range sshInfo(a.getCfg()) { // SSH-Benutzer/Passwort/Befehl für den Fernzugriff-Block
+			m["ssh_"+k] = v
+		}
+		writeJSON(w, m)
 	})
 
 	// Ziel-Adresse (kai_url) für das Startskript — OFFEN (nicht sensibel). So muss kiosk-browser.sh

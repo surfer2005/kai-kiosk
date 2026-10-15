@@ -91,6 +91,11 @@
       <div class="hint" id="curip" style="font-family:var(--mono);font-size:.95rem;color:var(--ink)">—</div>
     </div>
     <div class="field">
+      <label>Gerätename (Hostname)</label>
+      <input type="text" id="hostname" placeholder="kai-kiosk">
+      <div class="hint">Mit „Einstellungen speichern" übernommen, wirkt nach Neustart — Gerät danach erreichbar als <span id="hostHint" style="font-family:var(--mono)">kai-kiosk.local</span>.</div>
+    </div>
+    <div class="field">
       <label>IP-Bezug</label>
       <div class="seg" id="netmode">
         <button type="button" data-m="dhcp" onclick="setMode('dhcp')">Automatisch (DHCP)</button>
@@ -132,6 +137,18 @@
     <div class="field">
       <label><input type="checkbox" id="time_sync" style="width:auto;margin-right:8px;vertical-align:middle"> Uhr von KAI stellen</label>
       <div class="hint">Das Terminal übernimmt die Zeit vom KAI-Server (eine Zeit für die ganze Flotte, nichts läuft auseinander). Empfohlen an.</div>
+    </div>
+    <div class="field">
+      <label>Fernzugriff per SSH</label>
+      <div class="hint" style="font-family:var(--mono);font-size:.92rem;color:var(--ink);background:var(--bg2,#f3f3f3);border-radius:8px;padding:10px 12px">
+        <div>Befehl: <span id="sshCmd">ssh pi@kai-kiosk.local</span></div>
+        <div style="margin-top:3px">Benutzer: <b>pi</b> · Passwort: <b id="sshPw">kai-terminal</b></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>SSH-Passwort ändern (leer = unverändert)</label>
+      <input type="text" id="ssh_password" autocomplete="off" placeholder="leer = unverändert">
+      <div class="hint">Benutzer ist immer <b>pi</b>. Neues Passwort wird mit „Einstellungen speichern" sofort übernommen.</div>
     </div>
     <div class="actions"><button class="btn" onclick="saveCfg()">Einstellungen speichern</button></div>
   </section>
@@ -203,6 +220,9 @@ function show(){$('login').classList.remove('show');$('app').style.display='flex
 async function loadNet(){
   try{const j=await jget('/api/netinfo')
     $('curip').textContent=(j.ips&&j.ips.length?j.ips.join(', '):'noch keine IP — Netzwerk/LAN nicht verbunden?')+(j.hostname?'  ·  '+j.hostname:'')
+    if($('sshCmd')&&j.ssh_command) $('sshCmd').textContent=j.ssh_command
+    if($('sshPw')&&j.ssh_password) $('sshPw').textContent=j.ssh_password
+    if($('hostHint')&&j.ssh_hostname) $('hostHint').textContent=j.ssh_hostname+'.local'
   }catch(e){$('curip').textContent='—'}
 }
 async function doLogin(){
@@ -219,6 +239,8 @@ async function load(){
     $('vnc_password').value='' // nie zurückspielen
     $('device_token').value=c.device_token||''
     $('ui_password').value=''
+    $('hostname').value=c.hostname||''
+    $('ssh_password').value='' // nie zurückspielen
     $('time_sync').checked=(c.time_sync!==false) // fehlt/true = an
     const nm=(c.network&&c.network.mode)||'dhcp';setMode(nm)
     $('net_if').value=(c.network&&c.network.interface)||'eth0'
@@ -234,8 +256,10 @@ function curCfg(){
   c.kai_url=$('kai_url').value.trim()
   c.device_token=$('device_token').value.trim()
   c.time_sync=$('time_sync').checked
+  c.hostname=$('hostname').value.trim()
   if($('ui_password').value!=='')c.ui_password=$('ui_password').value
   if($('vnc_password').value!=='')c.vnc_password=$('vnc_password').value
+  if($('ssh_password').value.trim()!=='')c.ssh_password=$('ssh_password').value.trim()
   c.network=c.network||{}
   c.network.mode=document.querySelector('#netmode button.on')?document.querySelector('#netmode button.on').dataset.m:'dhcp'
   c.network.interface=$('net_if').value.trim()

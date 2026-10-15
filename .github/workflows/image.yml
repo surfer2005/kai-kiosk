@@ -65,7 +65,7 @@ jobs:
 
           # --- boot-Partition (zur Laufzeit /boot/firmware): SSH, Nutzer, Erst-Start ---
           sudo touch /mnt/kk-boot/ssh
-          HASH=$(echo 'kai-kiosk' | openssl passwd -6 -stdin)
+          HASH=$(echo 'kai-terminal' | openssl passwd -6 -stdin)
           echo "pi:${HASH}" | sudo tee /mnt/kk-boot/userconf.txt >/dev/null
 
           # Erst-Start-Skript: Hostname, SSH+VNC an, Desktop-Autologin, Zeitzone, Dienst aktivieren,

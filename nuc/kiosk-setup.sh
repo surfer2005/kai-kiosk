@@ -6,7 +6,7 @@ set +e
 SRC=/opt/kai-kiosk-setup
 PREFIX=/usr/local/bin
 CFG=/etc/kai-kiosk
-KIOSK_USER=kiosk
+KIOSK_USER=pi
 
 install -Dm0755 "$SRC/kai-kiosk"        "$PREFIX/kai-kiosk"
 install -Dm0755 "$SRC/kiosk-browser.sh" "$PREFIX/kiosk-browser.sh"

@@ -3,10 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 )
 
-const version = "0.1.20"
+const version = "0.1.21"
 
 type App struct {
 	mu  sync.Mutex
@@ -21,6 +22,10 @@ func (a *App) getCfg() *Config { a.mu.Lock(); defer a.mu.Unlock(); return a.cfg 
 // applyConfig speichert, wendet Netzwerk an und setzt (best effort) das VNC-Passwort. Rückgabe: die
 // VNC-Status-Notiz (für die Konfig-Seite) + ein Fehler, falls Speichern/Netzwerk scheitert.
 func (a *App) applyConfig(n *Config) (string, error) {
+	// SSH-Passwort wird in der Oberfläche nie zurückgespielt (leer = unverändert) → bewahren.
+	if strings.TrimSpace(n.SSHPassword) == "" {
+		n.SSHPassword = a.getCfg().SSHPassword
+	}
 	if err := saveConfig(n); err != nil {
 		return "", err
 	}
@@ -30,6 +35,8 @@ func (a *App) applyConfig(n *Config) (string, error) {
 	if err := applyNetwork(n); err != nil {
 		return "", err
 	}
+	applyHostname(n)    // Gerätename (voll wirksam nach Neustart)
+	applySSHPassword(n) // einheitliches SSH-Passwort (Benutzer pi)
 	return applyVNC(n), nil
 }
 
@@ -44,6 +51,8 @@ func main() {
 		log.Printf("netzwerk: %v", err)
 	}
 	applyVNC(cfg)
+	applyHostname(cfg)    // Gerätename → erreichbar als <hostname>.local
+	applySSHPassword(cfg) // einheitliches SSH-Passwort für Benutzer pi
 
 	go app.timeLoop() // Systemuhr an der KAI-Serveruhr halten (eine Zeit für die ganze Flotte)
 
