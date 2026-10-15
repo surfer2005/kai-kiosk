@@ -5,6 +5,12 @@
 # Neustarts erhalten, damit das Terminal OFFLINE genauso läuft wie online (Bordbuch-Prinzip).
 set -u
 
+# Deutsche Sprache/Region: damit native Felder wie das Datumsfeld (<input type="date">) als TT.MM.JJJJ
+# und mit Montag als Wochenanfang erscheinen — nicht im US-Format MM/DD/YYYY. Chromium folgt --lang (s. u.);
+# LANG/LANGUAGE stellen ICU/Locale passend ein, sofern die Locale erzeugt ist (kiosk-setup legt sie an).
+export LANG="${LANG:-de_DE.UTF-8}"
+export LANGUAGE="${LANGUAGE:-de_DE:de}"
+
 CFG=/etc/kai-kiosk/config.json
 URL=""
 # Die KAI-Adresse wird WEITER UNTEN über den lokalen Dienst (/api/target) geholt — NICHT direkt aus
@@ -80,6 +86,7 @@ URL="http://127.0.0.1:8091/boot"
 
 exec "$BIN" \
   --kiosk --app="$URL" \
+  --lang=de-DE \
   --user-data-dir="$PROFILE" \
   --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
   --disable-features=TranslateUI --no-first-run --fast --fast-start \

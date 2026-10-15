@@ -60,6 +60,15 @@ systemctl enable x11vnc.service 2>/dev/null
 systemctl enable kai-kiosk.service 2>/dev/null
 systemctl set-default graphical.target 2>/dev/null
 
+# Deutsche Locale: damit Chromium das native Datumsfeld (<input type=date>) als TT.MM.JJJJ und mit
+# Montag als Wochenanfang zeigt (sonst US-Format MM/DD/YYYY). kiosk-browser.sh setzt dazu --lang=de-DE.
+if ! locale -a 2>/dev/null | grep -qiE 'de_DE\.utf-?8'; then
+  sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen 2>/dev/null || true
+  grep -qiE '^de_DE.UTF-8 UTF-8' /etc/locale.gen 2>/dev/null || echo 'de_DE.UTF-8 UTF-8' >>/etc/locale.gen
+  locale-gen de_DE.UTF-8 2>/dev/null || true
+fi
+update-locale LANG=de_DE.UTF-8 LANGUAGE=de_DE:de 2>/dev/null || true
+
 # feh: legt das KAI-Logo während des Chromium-Kaltstarts mittig auf den X-Hintergrund (s. kiosk-browser.sh).
 command -v feh >/dev/null 2>&1 || apt-get -y install feh 2>/dev/null
 
