@@ -70,6 +70,10 @@ fi
 update-locale LANG=de_DE.UTF-8 LANGUAGE=de_DE:de 2>/dev/null || true
 
 # feh: legt das KAI-Logo während des Chromium-Kaltstarts mittig auf den X-Hintergrund (s. kiosk-browser.sh).
+# Deutsches Chromium-Sprachpaket: ohne das liefert Debians chromium nur en-US (Oberfläche + native
+# Datums-/Zeitfelder in US-Format, Picker-Knöpfe „Clear/Today"). de.pak kommt aus chromium-l10n.
+ls /usr/lib/chromium/locales/de.pak >/dev/null 2>&1 || apt-get -y install chromium-l10n 2>/dev/null
+
 command -v feh >/dev/null 2>&1 || apt-get -y install feh 2>/dev/null
 
 # Sauberer Boot: grafischer Splash mit KAI-Logo + drehendem Ring statt Textausgabe + GRUB-Menü.

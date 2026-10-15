@@ -15,7 +15,46 @@ import (
 func ensureSystem() {
 	ensureTimezone()
 	ensureGermanLocale()
+	ensureChromiumGerman()
 	refreshKioskScript()
+}
+
+// ensureChromiumGerman stellt das deutsche Chromium-Sprachpaket sicher. Debians `chromium` liefert nur
+// en-US; die deutschen Oberflächen-/Picker-Texte und das Datums-/Zeitformat der NATIVEN Felder stecken
+// in `chromium-l10n` (de.pak). Fehlt es, ist die Oberfläche englisch, egal was an --lang/LANG gesetzt ist
+// (Live-Fall NUC: Kalender „Clear/Today", Datum MM/DD/YYYY). Nur nachinstallieren, wenn de.pak fehlt und
+// apt + Netz da sind — so repariert ein Selbst-Update auch schon ausgelieferte Terminals.
+func ensureChromiumGerman() {
+	for _, p := range []string{
+		"/usr/lib/chromium/locales/de.pak",
+		"/usr/lib/chromium-browser/locales/de.pak",
+	} {
+		if _, err := os.Stat(p); err == nil {
+			return // schon vorhanden
+		}
+	}
+	if _, err := exec.LookPath("apt-get"); err != nil {
+		return
+	}
+	log.Printf("chromium: deutsches Sprachpaket (chromium-l10n) fehlt — installiere nach")
+	cmd := exec.Command("apt-get", "install", "-y", "chromium-l10n")
+	cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("chromium: chromium-l10n-Installation fehlgeschlagen: %v (%s)", err, lastLine(out))
+		return
+	}
+	log.Printf("chromium: chromium-l10n installiert — deutsche Oberfläche nach dem nächsten Kiosk-Start")
+}
+
+func lastLine(b []byte) string {
+	s := strings.TrimSpace(string(b))
+	if i := strings.LastIndexByte(s, '\n'); i >= 0 {
+		s = s[i+1:]
+	}
+	if len(s) > 200 {
+		s = s[len(s)-200:]
+	}
+	return s
 }
 
 // refreshKioskScript schreibt das in die Binärdatei eingebettete kiosk-browser.sh beim Dienststart auf
