@@ -89,10 +89,20 @@ fi
 # Netz-Warten mit schwarzem/leerem Bildschirm entfällt. Danach greift der Service-Worker (Offline).
 URL="http://127.0.0.1:8091/boot"
 
+# „Zurück zu KAI"-Erweiterung laden, wenn der Dienst sie hingelegt hat (s. refreshPortalExt). Sie blendet
+# auf fremden Portal-Seiten unten links einen „⟵ KAI"-Knopf ein und löscht bei der Abmeldung die
+# Portal-Anmeldungen. Fehlt das Verzeichnis (Altstand), startet der Kiosk unverändert ohne Erweiterung.
+EXT_ARGS=()
+EXT_DIR=/usr/local/share/kai-kiosk/portal-ext
+if [ -f "$EXT_DIR/manifest.json" ]; then
+  EXT_ARGS=(--load-extension="$EXT_DIR" --disable-extensions-except="$EXT_DIR")
+fi
+
 exec "$BIN" \
   --kiosk --app="$URL" \
   --lang=de-DE \
   --user-data-dir="$PROFILE" \
+  "${EXT_ARGS[@]}" \
   --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
   --disable-features=TranslateUI --no-first-run --fast --fast-start \
   --overscroll-history-navigation=0 --disable-pinch

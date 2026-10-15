@@ -17,6 +17,41 @@ func ensureSystem() {
 	ensureGermanLocale()
 	ensureChromiumGerman()
 	refreshKioskScript()
+	refreshPortalExt()
+}
+
+// portalExtDir ist das Verzeichnis, aus dem kiosk-browser.sh die „Zurück zu KAI"-Erweiterung lädt.
+const portalExtDir = "/usr/local/share/kai-kiosk/portal-ext"
+
+// refreshPortalExt schreibt die in die Binärdatei eingebettete Chromium-Erweiterung beim Dienststart auf
+// die Platte — gleiche Lehre wie refreshKioskScript: ein Selbst-Update tauscht nur die Binärdatei, also
+// muss die Erweiterung aus dem Programm kommen, nicht aus der Installation. Idempotent (nur schreiben,
+// wenn Inhalt abweicht), best effort, als root.
+func refreshPortalExt() {
+	if err := os.MkdirAll(portalExtDir, 0o755); err != nil {
+		log.Printf("kiosk: portal-ext-Verzeichnis nicht anlegbar: %v", err)
+		return
+	}
+	changed := false
+	for _, name := range []string{"manifest.json", "content.js", "background.js"} {
+		data, err := portalExtFS.ReadFile("portal-ext/" + name)
+		if err != nil {
+			log.Printf("kiosk: portal-ext/%s fehlt in der Binärdatei: %v", name, err)
+			continue
+		}
+		dst := portalExtDir + "/" + name
+		if cur, err := os.ReadFile(dst); err == nil && string(cur) == string(data) {
+			continue
+		}
+		if err := os.WriteFile(dst, data, 0o644); err != nil {
+			log.Printf("kiosk: portal-ext/%s nicht schreibbar: %v", name, err)
+			continue
+		}
+		changed = true
+	}
+	if changed {
+		log.Printf("kiosk: Portal-Erweiterung auf den Programmstand gebracht (%s)", portalExtDir)
+	}
 }
 
 // ensureChromiumGerman stellt das deutsche Chromium-Sprachpaket sicher. Debians `chromium` liefert nur

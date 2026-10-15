@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "KAI Kiosk – Zurück zu KAI",
+  "version": "1.0.0",
+  "description": "Blendet auf fremden Seiten (Portale) im Kiosk einen Zurück-zu-KAI-Knopf ein und löscht bei der KAI-Abmeldung die Portal-Anmeldungen (die KAI-Anmeldung/das Offline-Bordbuch bleiben erhalten).",
+  "permissions": ["browsingData"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}

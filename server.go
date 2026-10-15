@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,6 +30,13 @@ var bootHTML []byte
 
 //go:embed plymouth/logo.png
 var bootLogoPNG []byte
+
+// Chromium-Erweiterung „Zurück zu KAI" (Rückkehr-Knopf auf Portal-Seiten + Löschen der Portal-
+// Anmeldungen bei der Abmeldung). Wird beim Dienststart nach /usr/local/share/kai-kiosk/portal-ext
+// geschrieben (s. refreshPortalExt) und von kiosk-browser.sh per --load-extension geladen.
+//
+//go:embed portal-ext/manifest.json portal-ext/content.js portal-ext/background.js
+var portalExtFS embed.FS
 
 // Quelle für den Self-Update ("Aktualisieren"-Knopf): die neueste Release-Binärdatei des Kiosk-Repos.
 const updateBase = "https://github.com/surfer2005/kai-kiosk/releases/latest/download"
