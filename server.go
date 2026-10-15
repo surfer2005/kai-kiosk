@@ -22,6 +22,9 @@ import (
 //go:embed kiosk.html
 var kioskHTML []byte
 
+//go:embed kiosk-browser.sh
+var kioskBrowserSH []byte
+
 //go:embed boot.html
 var bootHTML []byte
 

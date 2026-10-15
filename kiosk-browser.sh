@@ -10,6 +10,11 @@ set -u
 # LANG/LANGUAGE stellen ICU/Locale passend ein, sofern die Locale erzeugt ist (kiosk-setup legt sie an).
 export LANG="${LANG:-de_DE.UTF-8}"
 export LANGUAGE="${LANGUAGE:-de_DE:de}"
+export LC_ALL="${LC_ALL:-de_DE.UTF-8}"
+export LC_TIME="${LC_TIME:-de_DE.UTF-8}"
+# Auf die deutsche Locale warten (der Dienst erzeugt sie beim Boot per ensureSystem; ohne sie bleiben
+# die nativen Datums-/Zeitfelder im US-Format). Max. ~30 s, dann trotzdem starten (--lang greift auch so).
+for _i in $(seq 1 30); do locale -a 2>/dev/null | grep -qiE 'de_DE\.utf-?8' && break; sleep 1; done
 
 CFG=/etc/kai-kiosk/config.json
 URL=""

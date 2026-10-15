@@ -15,6 +15,32 @@ import (
 func ensureSystem() {
 	ensureTimezone()
 	ensureGermanLocale()
+	refreshKioskScript()
+}
+
+// refreshKioskScript schreibt das in die Binärdatei eingebettete kiosk-browser.sh beim Dienststart auf
+// die Platte — damit das Start-Skript IMMER zum Programmstand passt (u. a. `--lang=de-DE` + Locale-
+// Variablen für deutsche Datums-/Zeitfelder). Vorher kam es nur best-effort aus dem Netz (raw.github),
+// lief ein Update nicht durch, blieb die alte Fassung ohne --lang aktiv (Live-Meldung: US-Datum/AM-PM).
+// Lehre wie beim Bordwächter-Keyring/Kiosk-Skript. Greift nach dem nächsten (Neu-)Start der Sitzung.
+func refreshKioskScript() {
+	const dst = "/usr/local/bin/kiosk-browser.sh"
+	if len(kioskBrowserSH) == 0 {
+		return
+	}
+	if cur, err := os.ReadFile(dst); err == nil && string(cur) == string(kioskBrowserSH) {
+		return // schon aktuell
+	}
+	tmp := dst + ".new"
+	if err := os.WriteFile(tmp, kioskBrowserSH, 0o755); err != nil {
+		log.Printf("kiosk: kiosk-browser.sh konnte nicht geschrieben werden: %v", err)
+		return
+	}
+	if err := os.Rename(tmp, dst); err != nil {
+		log.Printf("kiosk: kiosk-browser.sh konnte nicht ersetzt werden: %v", err)
+		return
+	}
+	log.Printf("kiosk: kiosk-browser.sh auf den Programmstand gebracht")
 }
 
 // ensureTimezone setzt Europe/Berlin, falls noch nicht gesetzt (sonst zeigt die Uhr im Kiosk UTC).
