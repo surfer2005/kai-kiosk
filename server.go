@@ -32,17 +32,27 @@ var bootLogoPNG []byte
 const updateBase = "https://github.com/surfer2005/kai-kiosk/releases/latest/download"
 const ghLatestAPI = "https://api.github.com/repos/surfer2005/kai-kiosk/releases/latest"
 
-// reexecSoon ersetzt den laufenden Prozess nach kurzer Verzögerung durch sich selbst (liest die Config
-// neu). Die Verzögerung lässt die HTTP-Antwort noch raus.
+// reexecSoon startet den Dienst nach kurzer Verzögerung neu — damit nach einem Selbst-Update der NEUE
+// Binärstand auch wirklich läuft (vorher per In-Prozess-syscall.Exec, das unter systemd nicht
+// zuverlässig griff: die neue Version war installiert, wurde aber nicht gestartet, Live-Meldung vom NUC).
+// Kanonisch unter systemd: den eigenen Dienst neu starten. `--no-block` reiht die Aufgabe ein und kehrt
+// SOFORT zurück (bevor systemd diesen Prozess beim Stoppen beendet). Fällt das weg (kein systemd),
+// ersetzt sich der Prozess selbst bzw. beendet sauber (Restart=always bringt ihn hoch).
 func reexecSoon() {
 	go func() {
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(600 * time.Millisecond) // HTTP-Antwort rausflushen lassen
+		if _, err := exec.LookPath("systemctl"); err == nil {
+			if err := exec.Command("systemctl", "--no-block", "restart", "kai-kiosk.service").Run(); err == nil {
+				time.Sleep(15 * time.Second) // systemd stoppt/startet uns; hier nur noch auf das SIGTERM warten
+				return
+			}
+		}
 		exe, err := os.Executable()
 		if err != nil {
 			exe = os.Args[0]
 		}
 		_ = syscall.Exec(exe, os.Args, os.Environ())
-		os.Exit(0) // nur erreichbar, wenn Exec fehlschlägt → systemd startet neu
+		os.Exit(0) // nur erreichbar, wenn Exec fehlschlägt → Restart=always startet neu
 	}()
 }
 
