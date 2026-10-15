@@ -16,6 +16,10 @@ type Config struct {
 	UIPassword  string `json:"ui_password"`  // Schutz der lokalen Konfig-Seite (leer = offen im LAN)
 	VNCPassword string `json:"vnc_password"` // Passwort für den VNC-Fernzugriff (leer = unverändert lassen)
 	DeviceToken string `json:"device_token"` // Geräte-Token (vertrauenswürdiges Terminal) — greift, sobald KAI die Token-Auth hat
+	// Uhr nach KAI stellen: das Terminal liest periodisch die Serverzeit (Date-Header der KAI-Adresse)
+	// und korrigiert bei Abweichung seine Systemuhr. So folgt die ganze Flotte EINER Zeit (der KAI-
+	// Serveruhr) und nichts läuft auseinander — auch dort, wo kein NTP erreichbar ist. Vorgabe: an.
+	TimeSync *bool `json:"time_sync"`
 
 	// Netzwerk: DHCP (Vorgabe) oder feste IP. Wird als NetworkManager-Keyfile geschrieben und
 	// beim Start angewandt (reines Datei-Schreiben, kein nmcli/Shell).
@@ -27,6 +31,9 @@ type Config struct {
 		DNS       string `json:"dns"`       // Komma-getrennt, z. B. "192.168.1.1,1.1.1.1"
 	} `json:"network"`
 }
+
+// timeSyncOn: Uhr-nach-KAI ist standardmäßig an (fehlendes Feld in alten Configs = an).
+func (c *Config) timeSyncOn() bool { return c.TimeSync == nil || *c.TimeSync }
 
 func defaultConfig() *Config {
 	c := &Config{

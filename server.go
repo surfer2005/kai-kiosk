@@ -290,11 +290,21 @@ func (a *App) routes() *http.ServeMux {
 			}
 			// Listen bleibt, was läuft (erst nach Neustart änderbar) — sonst sperrt man sich aus.
 			c.Listen = a.getCfg().Listen
-			if err := a.applyConfig(&c); err != nil {
+			note, err := a.applyConfig(&c)
+			if err != nil {
 				writeJSON(w, map[string]any{"ok": false, "error": err.Error()})
 				return
 			}
-			writeJSON(w, map[string]any{"ok": true})
+			// Wurde gerade ein Konfig-Passwort gesetzt, braucht JEDE folgende Anfrage Auth. Diese
+			// Sitzung hatte aber evtl. kein Cookie (vorher offen). Darum hier eine Sitzung ausstellen,
+			// damit das direkt danach laufende Nachladen nicht ins 401 läuft und „geht nicht" aussieht.
+			if strings.TrimSpace(c.UIPassword) != "" {
+				http.SetCookie(w, &http.Cookie{
+					Name: "kk_session", Value: newSession(), Path: "/",
+					HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: int(sessionTTL / time.Second),
+				})
+			}
+			writeJSON(w, map[string]any{"ok": true, "vnc": note})
 			return
 		}
 		writeJSON(w, a.getCfg())

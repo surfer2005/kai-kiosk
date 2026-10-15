@@ -116,7 +116,7 @@
       <div class="field">
         <label>VNC-Passwort (Fernzugriff)</label>
         <input type="password" id="vnc_password" autocomplete="off" placeholder="leer = unverändert">
-        <div class="hint">Für die Bildschirm-Fernwartung. Greift nach Geräte-Neustart.</div>
+        <div class="hint">Für die Bildschirm-Fernwartung (x11vnc am NUC, RealVNC am Pi). Greift sofort beim Speichern.</div>
       </div>
       <div class="field">
         <label>Geräte-Token</label>
@@ -128,6 +128,10 @@
       <label>Passwort der Konfig-Seite</label>
       <input type="password" id="ui_password" autocomplete="off" placeholder="leer = offen im LAN">
       <div class="hint">Schützt diese Seite. Leer = im lokalen Netz ohne Passwort erreichbar.</div>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="time_sync" style="width:auto;margin-right:8px;vertical-align:middle"> Uhr von KAI stellen</label>
+      <div class="hint">Das Terminal übernimmt die Zeit vom KAI-Server (eine Zeit für die ganze Flotte, nichts läuft auseinander). Empfohlen an.</div>
     </div>
     <div class="actions"><button class="btn" onclick="saveCfg()">Einstellungen speichern</button></div>
   </section>
@@ -215,6 +219,7 @@ async function load(){
     $('vnc_password').value='' // nie zurückspielen
     $('device_token').value=c.device_token||''
     $('ui_password').value=''
+    $('time_sync').checked=(c.time_sync!==false) // fehlt/true = an
     const nm=(c.network&&c.network.mode)||'dhcp';setMode(nm)
     $('net_if').value=(c.network&&c.network.interface)||'eth0'
     $('net_addr').value=(c.network&&c.network.address)||''
@@ -228,6 +233,7 @@ function curCfg(){
   const c=Object.assign({},window.__cfg||{})
   c.kai_url=$('kai_url').value.trim()
   c.device_token=$('device_token').value.trim()
+  c.time_sync=$('time_sync').checked
   if($('ui_password').value!=='')c.ui_password=$('ui_password').value
   if($('vnc_password').value!=='')c.vnc_password=$('vnc_password').value
   c.network=c.network||{}
@@ -240,7 +246,11 @@ function curCfg(){
 }
 async function saveCfg(){
   const r=await jpost('/api/config',curCfg());const j=await r.json().catch(()=>({}))
-  if(r.ok&&j.ok){toast('Gespeichert');load()}else{toast('Fehler: '+((j&&j.error)||r.status),1)}
+  if(r.ok&&j.ok){
+    const warn=j.vnc&&/kein|nicht/i.test(j.vnc)
+    toast('Gespeichert'+(j.vnc?(' · '+j.vnc):''),warn)
+    load()
+  }else{toast('Fehler: '+((j&&j.error)||r.status),1)}
 }
 async function saveUrlReboot(){
   const u=$('kai_url').value.trim()
