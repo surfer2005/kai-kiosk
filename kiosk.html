@@ -130,9 +130,9 @@
       </div>
     </div>
     <div class="field">
-      <label>Passwort der Konfig-Seite</label>
+      <label>Login-Passwort der Konfig-Seite</label>
       <input type="password" id="ui_password" autocomplete="off" placeholder="leer = offen im LAN">
-      <div class="hint">Schützt diese Seite. Leer = im lokalen Netz ohne Passwort erreichbar.</div>
+      <div class="hint">Schützt diese Seite — <b>nur Passwort, kein Benutzername</b>. Hier eintragen und „Einstellungen speichern": ab dann fragt die Seite dieses Passwort beim Öffnen. Leer = im lokalen Netz ohne Passwort erreichbar.</div>
     </div>
     <div class="field">
       <label><input type="checkbox" id="time_sync" style="width:auto;margin-right:8px;vertical-align:middle"> Uhr von KAI stellen</label>
@@ -178,6 +178,7 @@
 <div class="login" id="login">
   <div class="box">
     <h2>KAI-Kiosk — Anmelden</h2>
+    <div class="hint" style="margin:-4px 0 2px">Nur Passwort — kein Benutzername.</div>
     <input type="password" id="loginpw" name="kai-konfig-pw" autocomplete="off" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" onclick="doLogin()">Anmelden</button>
     <div class="hint" id="loginerr" style="color:var(--red);display:none">Passwort falsch</div>
