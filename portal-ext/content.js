@@ -41,7 +41,10 @@ function zeigeZurueckKnopf() {
     cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,.30)',
     WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
   })
-  btn.addEventListener('click', () => { window.location.assign(BOOT_URL) })
+  // Zurück NICHT auf die Standard-Ansicht (Bordbuch), sondern auf die Portale-Seite: der Boot-Weg
+  // reicht `view=portale` an KAI durch (Nutzerwunsch — nach dem Schließen einer Portal-Seite wieder
+  // bei den Portal-Kacheln landen, nicht im Bordbuch).
+  btn.addEventListener('click', () => { window.location.assign(BOOT_URL + '?view=portale') })
   document.body.appendChild(btn)
 }
 

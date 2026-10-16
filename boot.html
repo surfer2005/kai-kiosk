@@ -71,6 +71,11 @@
       .catch(function(){ return false; });
   }
 
+  // Optionales Ziel-View aus ?view=… (z. B. vom „⟵ KAI"-Knopf der Portal-Erweiterung → view=portale):
+  // als Hash an die KAI-Adresse hängen, damit KAI direkt auf dieser Ansicht öffnet statt auf dem Standard.
+  var viewHash = (function(){ try { var m = location.search.match(/[?&]view=([a-z0-9_-]+)/i); return m ? ('#' + m[1]) : ''; } catch(e){ return ''; } })();
+  function withView(u){ return viewHash ? (u.replace(/\/+$/, '') + '/' + viewHash) : u; }
+
   function go(u){ location.replace(u); }
 
   function loop(){
@@ -81,8 +86,8 @@
     }
     if(Date.now() - started > HINT_MS) showHint();
     reachable(kaiUrl).then(function(ok){
-      if(ok){ go(kaiUrl); return; }
-      if(Date.now() - started > FALLBACK_MS){ go(kaiUrl); return; }
+      if(ok){ go(withView(kaiUrl)); return; }
+      if(Date.now() - started > FALLBACK_MS){ go(withView(kaiUrl)); return; }
       setTimeout(loop, 1500);
     });
   }
