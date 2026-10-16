@@ -142,13 +142,13 @@
       <label>Fernzugriff per SSH</label>
       <div class="hint" style="font-family:var(--mono);font-size:.92rem;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
         <div>Befehl: <span id="sshCmd">ssh pi@kai-kiosk.local</span></div>
-        <div style="margin-top:3px">Benutzer: <b>pi</b> · Passwort: <b id="sshPw">kai-terminal</b></div>
+        <div style="margin-top:3px">Benutzer: <b id="sshUser">pi</b> · Passwort: <b id="sshPw">kai-terminal</b></div>
       </div>
     </div>
     <div class="field">
       <label>SSH-Passwort ändern (leer = unverändert)</label>
       <input type="text" id="ssh_password" autocomplete="off" placeholder="leer = unverändert">
-      <div class="hint">Benutzer ist immer <b>pi</b>. Neues Passwort wird mit „Einstellungen speichern" sofort übernommen.</div>
+      <div class="hint">Neues Passwort wird mit „Einstellungen speichern" sofort für den oben genannten Benutzer übernommen.</div>
     </div>
     <div class="actions"><button class="btn" onclick="saveCfg()">Einstellungen speichern</button></div>
   </section>
@@ -221,6 +221,7 @@ async function loadNet(){
   try{const j=await jget('/api/netinfo')
     $('curip').textContent=(j.ips&&j.ips.length?j.ips.join(', '):'noch keine IP — Netzwerk/LAN nicht verbunden?')+(j.hostname?'  ·  '+j.hostname:'')
     if($('sshCmd')&&j.ssh_command) $('sshCmd').textContent=j.ssh_command
+    if($('sshUser')&&j.ssh_user) $('sshUser').textContent=j.ssh_user
     if($('sshPw')&&j.ssh_password) $('sshPw').textContent=j.ssh_password
     if($('hostHint')&&j.ssh_hostname) $('hostHint').textContent=j.ssh_hostname+'.local'
   }catch(e){$('curip').textContent='—'}
