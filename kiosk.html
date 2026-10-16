@@ -76,6 +76,11 @@
       <input type="text" id="kai_url" placeholder="https://kai.beispiel.de">
       <div class="hint">Hier die KAI-Adresse eintragen (Muster: <code>https://kai.beispiel.de</code>). Nach dem Ändern Gerät neu starten, damit die neue Adresse greift.</div>
     </div>
+    <div class="field">
+      <label>Terminal-Name (Anzeige im KAI-Monitoring)</label>
+      <input type="text" id="device_name" placeholder="z. B. Hafenbüro Konstanz">
+      <div class="hint">Unter diesem Namen erscheint das Terminal im KAI-Geräte-Monitoring — unabhängig vom Hostnamen. Wird mit „Einstellungen speichern" übernommen.</div>
+    </div>
     <div class="actions">
       <button class="btn" onclick="saveUrlReboot()">Adresse speichern &amp; Gerät neu starten</button>
       <button class="btn ghost" onclick="saveCfg()">Nur speichern</button>
@@ -238,6 +243,7 @@ async function load(){
   try{
     const c=await jget('/api/config')
     $('kai_url').value=c.kai_url||''
+    $('device_name').value=c.device_name||''
     $('vnc_password').value='' // nie zurückspielen
     $('device_token').value=c.device_token||''
     $('ui_password').value=''
@@ -256,6 +262,7 @@ async function load(){
 function curCfg(){
   const c=Object.assign({},window.__cfg||{})
   c.kai_url=$('kai_url').value.trim()
+  c.device_name=$('device_name').value.trim()
   c.device_token=$('device_token').value.trim()
   c.time_sync=$('time_sync').checked
   c.hostname=$('hostname').value.trim()
