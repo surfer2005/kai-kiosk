@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-const version = "0.1.28"
+const version = "0.1.29"
 
 type App struct {
 	mu  sync.Mutex
@@ -26,6 +26,13 @@ func (a *App) applyConfig(n *Config) (string, error) {
 	if strings.TrimSpace(n.SSHPassword) == "" {
 		n.SSHPassword = a.getCfg().SSHPassword
 	}
+	// VNC ebenso: leer = unverändert. Das gespeicherte Passwort bewahren und VNC NUR dann (neu)
+	// anwenden, wenn der Nutzer wirklich ein neues eingetippt hat — sonst wurde VNC bei jedem
+	// Speichern neu gesetzt und die Meldung "VNC gespeichert" erschien überall.
+	vncNeu := strings.TrimSpace(n.VNCPassword) != ""
+	if !vncNeu {
+		n.VNCPassword = a.getCfg().VNCPassword
+	}
 	if err := saveConfig(n); err != nil {
 		return "", err
 	}
@@ -37,7 +44,10 @@ func (a *App) applyConfig(n *Config) (string, error) {
 	}
 	applyHostname(n)    // Gerätename (voll wirksam nach Neustart)
 	applySSHPassword(n) // einheitliches SSH-Passwort (Benutzer pi)
-	return applyVNC(n), nil
+	if vncNeu {
+		return applyVNC(n), nil // nur bei echter Änderung anwenden + melden
+	}
+	return "", nil
 }
 
 func main() {

@@ -31,6 +31,7 @@ func (a *App) sendHeartbeat() {
 	}
 	body, err := json.Marshal(map[string]any{
 		"version": version,
+		"kind":    "kiosk", // Gerätetyp fürs Monitoring (Kiosk vs. Bordwächter)
 		"name":    strings.TrimSpace(cfg.DeviceName), // Anzeigename im KAI-Monitoring (aus der Config)
 		"system":  collectSystem(),
 		"status":  "Kiosk aktiv",

@@ -261,6 +261,7 @@ async function load(){
 
 function curCfg(){
   const c=Object.assign({},window.__cfg||{})
+  delete c.vnc_password // gespeicherten Wert NIE zurückschicken — sonst wird VNC bei jedem Speichern neu angewandt ("VNC gespeichert")
   c.kai_url=$('kai_url').value.trim()
   c.device_name=$('device_name').value.trim()
   c.device_token=$('device_token').value.trim()

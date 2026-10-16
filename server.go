@@ -42,27 +42,15 @@ var portalExtFS embed.FS
 const updateBase = "https://github.com/surfer2005/kai-kiosk/releases/latest/download"
 const ghLatestAPI = "https://api.github.com/repos/surfer2005/kai-kiosk/releases/latest"
 
-// reexecSoon startet den Dienst nach kurzer Verzögerung neu — damit nach einem Selbst-Update der NEUE
-// Binärstand auch wirklich läuft (vorher per In-Prozess-syscall.Exec, das unter systemd nicht
-// zuverlässig griff: die neue Version war installiert, wurde aber nicht gestartet, Live-Meldung vom NUC).
-// Kanonisch unter systemd: den eigenen Dienst neu starten. `--no-block` reiht die Aufgabe ein und kehrt
-// SOFORT zurück (bevor systemd diesen Prozess beim Stoppen beendet). Fällt das weg (kein systemd),
-// ersetzt sich der Prozess selbst bzw. beendet sauber (Restart=always bringt ihn hoch).
+// reexecSoon startet den Dienst neu, damit nach einem Selbst-Update das NEUE Binary läuft.
+// ZUVERLÄSSIGSTER Weg unter systemd: sich einfach beenden — `Restart=always` (RestartSec=3) startet den
+// Dienst automatisch mit dem neuen Binary neu. Der frühere Weg über `systemctl … restart` aus dem
+// eigenen Prozess griff NICHT zuverlässig (Job eingereiht, alter Prozess lief weiter → „Aktualisieren"
+// blieb hängen, Live-Fall NUC). Reines Beenden hat diese Eigenheit nicht.
 func reexecSoon() {
 	go func() {
 		time.Sleep(600 * time.Millisecond) // HTTP-Antwort rausflushen lassen
-		if _, err := exec.LookPath("systemctl"); err == nil {
-			if err := exec.Command("systemctl", "--no-block", "restart", "kai-kiosk.service").Run(); err == nil {
-				time.Sleep(15 * time.Second) // systemd stoppt/startet uns; hier nur noch auf das SIGTERM warten
-				return
-			}
-		}
-		exe, err := os.Executable()
-		if err != nil {
-			exe = os.Args[0]
-		}
-		_ = syscall.Exec(exe, os.Args, os.Environ())
-		os.Exit(0) // nur erreichbar, wenn Exec fehlschlägt → Restart=always startet neu
+		os.Exit(0)                          // systemd (Restart=always) startet mit dem neuen Binary neu
 	}()
 }
 
