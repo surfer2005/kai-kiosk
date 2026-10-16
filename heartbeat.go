@@ -48,11 +48,15 @@ func (a *App) sendHeartbeat() {
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
+		kaiReachable = false
 		log.Printf("heartbeat: %v", err)
 		return
 	}
 	resp.Body.Close()
 	if resp.StatusCode != 200 {
+		kaiReachable = false
 		log.Printf("heartbeat: http %d", resp.StatusCode)
+		return
 	}
+	kaiReachable = true
 }

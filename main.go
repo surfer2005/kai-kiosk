@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-const version = "0.1.29"
+const version = "0.1.30"
 
 type App struct {
 	mu  sync.Mutex
@@ -66,6 +66,7 @@ func main() {
 
 	go app.timeLoop()      // Systemuhr an der KAI-Serveruhr halten (eine Zeit für die ganze Flotte)
 	go app.heartbeatLoop() // Herzschlag an KAI (Version + Geräte-Zustand fürs Monitoring)
+	go app.devlogLoop()    // Geräte-Protokoll (Ereignisse/Fehler, offline gepuffert) → KAI
 
 	log.Printf("KAI-Kiosk %s — Konfig-Oberfläche auf %s (Ziel: %s)", version, cfg.Listen, cfg.KaiURL)
 	if err := http.ListenAndServe(cfg.Listen, app.routes()); err != nil {
