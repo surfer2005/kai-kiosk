@@ -53,6 +53,18 @@ d.setdefault('credentials_enable_service',False)
 d['credentials_enable_service']=False
 d.setdefault('credentials_enable_autosignin',False)
 d['credentials_enable_autosignin']=False
+# Rechtschreibprüfung DEUTSCH: --lang stellt nur die Oberfläche um; die Prüfsprache steht im Profil und
+# blieb seit dem ersten Start (vor dem Sprachpaket) auf en-US. Fehlt das Wörterbuch, lädt Chromium
+# de-DE-*.bdic beim nächsten Online-Start einmal nach und legt es im (dauerhaften) Profil ab.
+d.setdefault('spellcheck',{})
+d['spellcheck']['dictionaries']=['de-DE']
+d['spellcheck']['dictionary']=''
+d['spellcheck']['use_spelling_service']=False
+d.setdefault('browser',{})
+d['browser']['enable_spellchecking']=True
+d.setdefault('intl',{})
+d['intl']['accept_languages']='de-DE,de'
+d['intl']['selected_languages']='de-DE,de'
 json.dump(d,open(p,'w'))
 PY
 

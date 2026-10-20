@@ -60,6 +60,7 @@ func refreshPortalExt() {
 // (Live-Fall NUC: Kalender „Clear/Today", Datum MM/DD/YYYY). Nur nachinstallieren, wenn de.pak fehlt und
 // apt + Netz da sind — so repariert ein Selbst-Update auch schon ausgelieferte Terminals.
 func ensureChromiumGerman() {
+	ensureGermanDictionary()
 	for _, p := range []string{
 		"/usr/lib/chromium/locales/de.pak",
 		"/usr/lib/chromium-browser/locales/de.pak",
@@ -79,6 +80,24 @@ func ensureChromiumGerman() {
 		return
 	}
 	log.Printf("chromium: chromium-l10n installiert — deutsche Oberfläche nach dem nächsten Kiosk-Start")
+}
+
+// ensureGermanDictionary legt das deutsche Hunspell-Wörterbuch (hunspell-de-de) nach — Rückfall für die
+// Rechtschreibprüfung, falls Chromium das Wörterbuch nicht selbst laden kann (kein Netz beim ersten Start).
+// Die Prüfsprache selbst setzt kiosk-browser.sh im Profil (spellcheck.dictionaries = de-DE).
+func ensureGermanDictionary() {
+	if _, err := os.Stat("/usr/share/hunspell/de_DE.dic"); err == nil {
+		return
+	}
+	if _, err := exec.LookPath("apt-get"); err != nil {
+		return
+	}
+	log.Printf("chromium: deutsches Wörterbuch (hunspell-de-de) fehlt — installiere nach")
+	cmd := exec.Command("apt-get", "install", "-y", "hunspell-de-de")
+	cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("chromium: hunspell-de-de-Installation fehlgeschlagen: %v (%s)", err, lastLine(out))
+	}
 }
 
 func lastLine(b []byte) string {
