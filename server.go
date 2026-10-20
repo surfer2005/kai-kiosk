@@ -422,7 +422,10 @@ func (a *App) routes() *http.ServeMux {
 	// die geschützte config.json (root, 0600) nicht selbst lesen; der als root laufende Dienst liefert
 	// nur diese eine, unkritische Angabe. Behebt den Fall "Benutzer kiosk darf config.json nicht lesen".
 	mux.HandleFunc("/api/target", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, map[string]any{"kai_url": a.getCfg().KaiURL})
+		c := a.getCfg()
+		// device_name geht als ?terminal= an KAI (boot.html): dort steht es an jeder Protokollzeile der
+		// Terminal-Diagnose, auch wenn am Gerät das Schiff gewechselt wird.
+		writeJSON(w, map[string]any{"kai_url": c.KaiURL, "device_name": c.DeviceName})
 	})
 
 	return mux
