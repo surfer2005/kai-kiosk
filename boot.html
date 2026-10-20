@@ -82,7 +82,14 @@
     var h = u.indexOf('#'), basis = h >= 0 ? u.slice(0, h) : u, rest = h >= 0 ? u.slice(h) : '';
     return basis + (basis.indexOf('?') >= 0 ? '&' : '?') + 'terminal=' + encodeURIComponent(terminalName) + rest;
   }
-  function withView(u){ return withTerminal(viewHash ? (u.replace(/\/+$/, '') + '/' + viewHash) : u); }
+  // Frischer Start (kein ?view= vom „⟵ KAI“-Knopf eines Portals) → kiosk_start=1: KAI verwirft dann die
+  // gespeicherte Anmeldung, nach dem Hochfahren erscheint die Anmeldemaske statt des letzten Nutzers.
+  function withStart(u){
+    if(viewHash) return u;
+    var h = u.indexOf('#'), basis = h >= 0 ? u.slice(0, h) : u, rest = h >= 0 ? u.slice(h) : '';
+    return basis + (basis.indexOf('?') >= 0 ? '&' : '?') + 'kiosk_start=1' + rest;
+  }
+  function withView(u){ return withStart(withTerminal(viewHash ? (u.replace(/\/+$/, '') + '/' + viewHash) : u)); }
 
   function go(u){ location.replace(u); }
 
