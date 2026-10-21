@@ -110,11 +110,16 @@ if [ -f "$EXT_DIR/manifest.json" ]; then
   EXT_ARGS=(--load-extension="$EXT_DIR" --disable-extensions-except="$EXT_DIR")
 fi
 
-exec "$BIN" \
-  --kiosk --app="$URL" \
-  --lang=de-DE \
-  --user-data-dir="$PROFILE" \
-  "${EXT_ARGS[@]}" \
-  --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
-  --disable-features=TranslateUI --no-first-run --fast --fast-start \
-  --overscroll-history-navigation=0 --disable-pinch
+# Nicht per exec: schließt jemand das Kiosk-Fenster (Strg+W, Strg+Umschalt+Q, Absturz), stünde sonst
+# der leere Desktop da. Stattdessen nach 2 s neu starten — wieder auf den Ladebildschirm.
+while true; do
+  "$BIN" \
+    --kiosk --app="$URL" \
+    --lang=de-DE \
+    --user-data-dir="$PROFILE" \
+    "${EXT_ARGS[@]}" \
+    --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
+    --disable-features=TranslateUI --no-first-run --fast --fast-start \
+    --overscroll-history-navigation=0 --disable-pinch
+  sleep 2
+done

@@ -18,6 +18,7 @@ func ensureSystem() {
 	ensureChromiumGerman()
 	refreshKioskScript()
 	refreshPortalExt()
+	ensureLockdown()
 }
 
 // portalExtDir ist das Verzeichnis, aus dem kiosk-browser.sh die „Zurück zu KAI"-Erweiterung lädt.
