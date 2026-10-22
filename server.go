@@ -425,7 +425,16 @@ func (a *App) routes() *http.ServeMux {
 		c := a.getCfg()
 		// device_name geht als ?terminal= an KAI (boot.html): dort steht es an jeder Protokollzeile der
 		// Terminal-Diagnose, auch wenn am Gerät das Schiff gewechselt wird.
-		writeJSON(w, map[string]any{"kai_url": c.KaiURL, "device_name": c.DeviceName})
+		out := map[string]any{"kai_url": c.KaiURL, "device_name": c.DeviceName}
+		// Geräte-Token NUR an den Browser auf diesem Gerät selbst (Loopback) — boot.html hängt ihn als
+		// ?device= an die KAI-Adresse: KAI erkennt damit das vertrauenswürdige Gerät (Anmeldung ohne
+		// zweiten Faktor). Aus dem Netz abgefragt bleibt er geheim.
+		if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+			if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() && strings.TrimSpace(c.DeviceToken) != "" {
+				out["device_token"] = strings.TrimSpace(c.DeviceToken)
+			}
+		}
+		writeJSON(w, out)
 	})
 
 	return mux

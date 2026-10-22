@@ -59,7 +59,7 @@
   function getTarget(){
     return fetch('/api/target', {cache:'no-store'})
       .then(function(r){ return r.json(); })
-      .then(function(j){ kaiUrl = (j && j.kai_url ? String(j.kai_url) : '').trim(); terminalName = (j && j.device_name ? String(j.device_name) : '').trim(); })
+      .then(function(j){ kaiUrl = (j && j.kai_url ? String(j.kai_url) : '').trim(); terminalName = (j && j.device_name ? String(j.device_name) : '').trim(); deviceToken = (j && j.device_token ? String(j.device_token) : '').trim(); })
       .catch(function(){ /* Dienst noch nicht bereit — gleich erneut */ });
   }
 
@@ -77,10 +77,16 @@
   // Terminal-Name aus der Konfig als ?terminal= anhängen — KAI merkt ihn sich und schreibt ihn an jede
   // Zeile der Terminal-Diagnose (welches Gerät, auch wenn am Gerät das Schiff gewechselt wird).
   var terminalName = '';
+  // Geräte-Token (nur vom eigenen Dienst über Loopback geliefert) als ?device= — KAI merkt ihn sich und
+  // erkennt das Terminal als vertrauenswürdiges Gerät (Anmeldung ohne zweiten Faktor).
+  var deviceToken = '';
   function withTerminal(u){
-    if(!terminalName) return u;
+    if(!terminalName && !deviceToken) return u;
     var h = u.indexOf('#'), basis = h >= 0 ? u.slice(0, h) : u, rest = h >= 0 ? u.slice(h) : '';
-    return basis + (basis.indexOf('?') >= 0 ? '&' : '?') + 'terminal=' + encodeURIComponent(terminalName) + rest;
+    var q = [];
+    if(terminalName) q.push('terminal=' + encodeURIComponent(terminalName));
+    if(deviceToken) q.push('device=' + encodeURIComponent(deviceToken));
+    return basis + (basis.indexOf('?') >= 0 ? '&' : '?') + q.join('&') + rest;
   }
   // Frischer Start (kein ?view= vom „⟵ KAI“-Knopf eines Portals) → kiosk_start=1: KAI verwirft dann die
   // gespeicherte Anmeldung, nach dem Hochfahren erscheint die Anmeldemaske statt des letzten Nutzers.
