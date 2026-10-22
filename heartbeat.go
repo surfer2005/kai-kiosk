@@ -8,11 +8,66 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
+
+// Aktualisierung aus KAI (Nutzervorgabe 2026-10-22: alle Geräte direkt aus KAI aktualisieren, am Gerät
+// bleibt der Knopf „Aktualisieren“ daneben bestehen). KAI kann das Gerät nicht ansprechen — das Gerät fragt
+// alle 15 s nach (GET /api/edge/auftrag) und bekommt die Anforderung zusätzlich mit dem Herzschlag.
+var updateLaeuft sync.Mutex
+
+func (a *App) kaiRequest(method, path string) (*http.Response, error) {
+	cfg := a.getCfg()
+	base := strings.TrimRight(strings.TrimSpace(cfg.KaiURL), "/")
+	token := strings.TrimSpace(cfg.DeviceToken)
+	if base == "" || token == "" {
+		return nil, io.EOF
+	}
+	req, err := http.NewRequest(method, base+path, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Edge-Token", token)
+	return (&http.Client{Timeout: 15 * time.Second}).Do(req)
+}
+
+func (a *App) updateAusKai() {
+	if !updateLaeuft.TryLock() {
+		return
+	}
+	defer updateLaeuft.Unlock()
+	if resp, err := a.kaiRequest("POST", "/api/edge/update-gestartet"); err == nil {
+		resp.Body.Close()
+	}
+	if err := selfUpdate(); err != nil {
+		logEvent("error", "Aktualisierung (aus KAI) fehlgeschlagen: "+err.Error())
+		return
+	}
+	logEvent("info", "Aktualisierung aus KAI geladen, Neustart (bisher Version "+version+")")
+	reexecSoon()
+}
+
+func (a *App) auftragLoop() {
+	time.Sleep(30 * time.Second)
+	for {
+		if resp, err := a.kaiRequest("GET", "/api/edge/auftrag"); err == nil {
+			var au struct {
+				Update bool `json:"update"`
+			}
+			_ = json.NewDecoder(resp.Body).Decode(&au)
+			resp.Body.Close()
+			if au.Update {
+				go a.updateAusKai()
+			}
+		}
+		time.Sleep(15 * time.Second)
+	}
+}
 
 func (a *App) heartbeatLoop() {
 	time.Sleep(20 * time.Second) // Netz/Zeit erst hochkommen lassen
@@ -52,11 +107,17 @@ func (a *App) sendHeartbeat() {
 		log.Printf("heartbeat: %v", err)
 		return
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		kaiReachable = false
 		log.Printf("heartbeat: http %d", resp.StatusCode)
 		return
 	}
 	kaiReachable = true
+	var hr struct {
+		UpdateRequested bool `json:"update_requested"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&hr) == nil && hr.UpdateRequested {
+		go a.updateAusKai()
+	}
 }
