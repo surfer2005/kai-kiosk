@@ -115,9 +115,13 @@ func (a *App) sendHeartbeat() {
 	}
 	kaiReachable = true
 	var hr struct {
-		UpdateRequested bool `json:"update_requested"`
+		UpdateRequested bool         `json:"update_requested"`
+		Bordmedien      []bordGeraet `json:"bordmedien"` // Bildschirme/Bordmusik an Bord (Bedienung ohne Netz)
 	}
-	if json.NewDecoder(resp.Body).Decode(&hr) == nil && hr.UpdateRequested {
-		go a.updateAusKai()
+	if json.NewDecoder(resp.Body).Decode(&hr) == nil {
+		if hr.UpdateRequested {
+			go a.updateAusKai()
+		}
+		bordmedienAusHerzschlag(hr.Bordmedien)
 	}
 }

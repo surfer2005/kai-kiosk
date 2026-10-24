@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-const version = "0.1.36"
+const version = "0.1.37"
 
 type App struct {
 	mu  sync.Mutex
@@ -44,6 +44,7 @@ func (a *App) applyConfig(n *Config) (string, error) {
 	}
 	applyHostname(n)    // Gerätename (voll wirksam nach Neustart)
 	applySSHPassword(n) // einheitliches SSH-Passwort (Benutzer pi)
+	ensureLokalesNetz(n)
 	if vncNeu {
 		return applyVNC(n), nil // nur bei echter Änderung anwenden + melden
 	}
@@ -63,6 +64,7 @@ func main() {
 	applyVNC(cfg)
 	applyHostname(cfg)    // Gerätename → erreichbar als <hostname>.local
 	applySSHPassword(cfg) // einheitliches SSH-Passwort für Benutzer pi
+	ensureLokalesNetz(cfg) // Chromium-Freigabe „lokales Netz“ (Bordmedien ohne Netz über diesen Dienst)
 
 	go app.timeLoop()      // Systemuhr an der KAI-Serveruhr halten (eine Zeit für die ganze Flotte)
 	go app.heartbeatLoop() // Herzschlag an KAI (Version + Geräte-Zustand fürs Monitoring)

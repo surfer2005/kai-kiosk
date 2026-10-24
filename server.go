@@ -421,6 +421,8 @@ func (a *App) routes() *http.ServeMux {
 	// Ziel-Adresse (kai_url) für das Startskript — OFFEN (nicht sensibel). So muss kiosk-browser.sh
 	// die geschützte config.json (root, 0600) nicht selbst lesen; der als root laufende Dienst liefert
 	// nur diese eine, unkritische Angabe. Behebt den Fall "Benutzer kiosk darf config.json nicht lesen".
+	a.bordmedienRoutes(mux) // Bordmedien ohne Netz: Knopfdruck ans Gerät im Bord-Netz weiterreichen
+
 	mux.HandleFunc("/api/target", func(w http.ResponseWriter, r *http.Request) {
 		c := a.getCfg()
 		// device_name geht als ?terminal= an KAI (boot.html): dort steht es an jeder Protokollzeile der
